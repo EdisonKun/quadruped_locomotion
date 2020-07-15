@@ -198,6 +198,7 @@ namespace balance_controller{
           {
             limbs_state.at(static_cast<free_gait::LimbEnum>(i))->setState(StateSwitcher::States::StanceNormal);
             robot_state->setSupportLeg(static_cast<free_gait::LimbEnum>(i), true);
+            std::cout << "now all four legs states are " << robot_state->isSupportLeg(static_cast<free_gait::LimbEnum>(i)) <<std::endl;
           }
 //      }
         int i = 0;
@@ -329,6 +330,12 @@ namespace balance_controller{
     if(!ignore_contact_sensor)
       contactStateMachine();
     int num_of_stance_legs = 0;
+    std::cout << "leg state are" << std::endl;
+    for (unsigned int i = 0; i < 4; i++) {
+        free_gait::LimbEnum limb = static_cast<free_gait::LimbEnum>(i);
+        std::cout << limbs_state.at(limb)->getState() <<std::endl;//0?
+    }
+
     for(unsigned int i=0;i<4;i++)
       {
         free_gait::LimbEnum limb = static_cast<free_gait::LimbEnum>(i);
@@ -874,8 +881,18 @@ namespace balance_controller{
         desired_vmc_ft.header.frame_id = "/base_link";
         desired_vmc_ft.header.stamp = ros::Time::now();
         Force net_force;
+        net_force.setZero();
         Torque net_torque;
+        net_torque.setZero();
+
+        std::cout << robot_state->isSupportLeg(free_gait::LimbEnum::LF_LEG)<<std::endl;
+        std::cout << robot_state->isSupportLeg(free_gait::LimbEnum::RF_LEG)<<std::endl;
+        std::cout << robot_state->isSupportLeg(free_gait::LimbEnum::RH_LEG)<<std::endl;
+        std::cout << robot_state->isSupportLeg(free_gait::LimbEnum::LH_LEG)<<std::endl;
+
+
         virtual_model_controller_->getDistributedVirtualForceAndTorqueInBaseFrame(net_force, net_torque);
+
         kindr_ros::convertToRosGeometryMsg(Position(virtual_model_controller_->getDesiredVirtualForceInBaseFrame().vector()),
                                            desired_vmc_ft.wrench.force);
         kindr_ros::convertToRosGeometryMsg(Position(virtual_model_controller_->getDesiredVirtualTorqueInBaseFrame().vector()),
@@ -1082,6 +1099,7 @@ namespace balance_controller{
         desired_robot_state.rh_leg_mode.support_leg = limbs_desired_state.at(free_gait::LimbEnum::RH_LEG)->getState();
         desired_robot_state.lh_leg_mode.support_leg = limbs_desired_state.at(free_gait::LimbEnum::LH_LEG)->getState();
 
+
 //        desired_robot_state.lf_leg_mode.support_leg = robot_state->isSupportLeg()
 
         desired_robot_state_.push_back(desired_robot_state);
@@ -1177,9 +1195,11 @@ namespace balance_controller{
    */
   void RosBalanceController::baseCommandCallback(const free_gait_msgs::RobotStateConstPtr& robot_state_msg)
   {
+//      ROS_WARN_STREAM("iN THE base command callback function");
     base_desired_position = Position(robot_state_msg->base_pose.pose.pose.position.x,
                                       robot_state_msg->base_pose.pose.pose.position.y,
                                       robot_state_msg->base_pose.pose.pose.position.z);
+//    ROS_INFO_STREAM(base_desired_position);
     base_desired_rotation = RotationQuaternion(robot_state_msg->base_pose.pose.pose.orientation.w,
                                                           robot_state_msg->base_pose.pose.pose.orientation.x,
                                                           robot_state_msg->base_pose.pose.pose.orientation.y,
@@ -1224,6 +1244,7 @@ namespace balance_controller{
       joint_commands[i+3] = robot_state_msg->rf_leg_joints.position[i];
       joint_commands[i+6] = robot_state_msg->rh_leg_joints.position[i];
       joint_commands[i+9] = robot_state_msg->lh_leg_joints.position[i];
+//      ROS_INFO_STREAM(joint_commands[i]);
     }
     commands_buffer.writeFromNonRT(joint_commands);
 
@@ -1381,6 +1402,7 @@ namespace balance_controller{
       }
 
     if(robot_state_msg->lf_leg_mode.support_leg){
+//        std::cout << "msg is " << robot_state_msg->lf_leg_mode.support_leg << std::endl;
         robot_state_->setSupportLeg(free_gait::LimbEnum::LF_LEG, true);
         robot_state_->setSurfaceNormal(free_gait::LimbEnum::LF_LEG,
                                        Vector(robot_state_msg->lf_leg_mode.surface_normal.vector.x,
@@ -1411,6 +1433,7 @@ namespace balance_controller{
 
       };
     if(robot_state_msg->rf_leg_mode.support_leg){
+//        std::cout << "msg is " << robot_state_msg->rf_leg_mode.support_leg << std::endl;
         robot_state_->setSupportLeg(static_cast<free_gait::LimbEnum>(1), true);
         robot_state_->setSurfaceNormal(static_cast<free_gait::LimbEnum>(1),
                                        Vector(robot_state_msg->rf_leg_mode.surface_normal.vector.x,
@@ -1439,6 +1462,7 @@ namespace balance_controller{
 
       };
     if(robot_state_msg->rh_leg_mode.support_leg){
+//        std::cout << "msg is " << robot_state_msg->rh_leg_mode.support_leg << std::endl;
         robot_state_->setSupportLeg(static_cast<free_gait::LimbEnum>(2), true);
         robot_state_->setSurfaceNormal(static_cast<free_gait::LimbEnum>(2),
                                        Vector(robot_state_msg->rh_leg_mode.surface_normal.vector.x,
@@ -1467,6 +1491,7 @@ namespace balance_controller{
 
       };
     if(robot_state_msg->lh_leg_mode.support_leg){
+//        std::cout << "msg is " << robot_state_msg->lh_leg_mode.support_leg << std::endl;
         robot_state_->setSupportLeg(static_cast<free_gait::LimbEnum>(3), true);
         robot_state_->setSurfaceNormal(static_cast<free_gait::LimbEnum>(3),
                                        Vector(robot_state_msg->lh_leg_mode.surface_normal.vector.x,
@@ -1482,6 +1507,7 @@ namespace balance_controller{
         sw_phase.at(free_gait::LimbEnum::LH_LEG) = 0;
       } else {
 //        ROS_WARN("NO Contact !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+
         robot_state_->setSupportLeg(static_cast<free_gait::LimbEnum>(3), false);
         robot_state_->setSurfaceNormal(static_cast<free_gait::LimbEnum>(3),Vector(0,0,1));
         limbs_desired_state.at(free_gait::LimbEnum::LH_LEG)->setState(StateSwitcher::States::SwingNormal);
@@ -1499,8 +1525,11 @@ namespace balance_controller{
 
   }
 
+  //ignore contact sensor == false
   void RosBalanceController::contactStateMachine()
   {
+      std::cout << "real robot value is " << real_robot << std::endl;//0
+      std::cout << "ignore_contact sensor is " << ignore_contact_sensor <<std::endl;//0
 
     for(unsigned int i = 0;i<4;i++)
       {

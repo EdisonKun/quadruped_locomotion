@@ -18,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   quadruped_model
   free_gait_msgs
   sim_assiants
+  kindr_ros
 #  free_gait_ros
   free_gait_core
 #  orocos_kdl
