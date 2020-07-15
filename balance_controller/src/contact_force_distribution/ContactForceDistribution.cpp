@@ -65,7 +65,6 @@ ContactForceDistribution::ContactForceDistribution(const ros::NodeHandle& node_h
       node_handle_(node_handle),
       footDof_(3)//torso, legs, terrain)
 {
-    std::cout <<"ContactForceDistribution" << std::endl;
   solver_.reset(new qp_solver::QuadraticProblemSolver);
   cost_function_.reset(new qp_solver::QuadraticObjectiveFunction);
   constraints_.reset(new qp_solver::LinearFunctionConstraints);
@@ -101,12 +100,10 @@ bool ContactForceDistribution::computeForceDistribution(
     const Force& virtualForceInBaseFrame,
     const Torque& virtualTorqueInBaseFrame)
 {
-   std::cout <<"computeForceDistribution" << std::endl;
   if(!checkIfParametersLoaded()) return false;
 
   resetOptimization();//! WSHY: reset leg contact force and object function parameters
   prepareLegLoading();
-  std::cout << "the nlegsinforce disctribution is " << nLegsInForceDistribution_ << std::endl;
 
   if (nLegsInForceDistribution_ > 0)
   {
@@ -139,8 +136,6 @@ bool ContactForceDistribution::computeForceDistribution(
 
 bool ContactForceDistribution::prepareLegLoading()
 {
-    std::cout <<"prepareLegLoading" << std::endl;
-
   nLegsInForceDistribution_ = 0;
 
   for (auto& legInfo : legInfos_)
@@ -153,8 +148,6 @@ bool ContactForceDistribution::prepareLegLoading()
       legInfo.second.indexInStanceLegList_ = nLegsInForceDistribution_;//! WSHY: 0,1,2,3
       legInfo.second.startIndexInVectorX_ = legInfo.second.indexInStanceLegList_ * footDof_;//! WSHY: 0,3,6,9
       nLegsInForceDistribution_++;
-
-      std::cout << "nlegsinforcedistribution value is " << nLegsInForceDistribution_ << std::endl;
 
 //      if (sm::definitelyLessThan(legInfo.first->getDesiredLoadFactor(), 1.0))
       //! WSHY: what is the useness of Load Factor
@@ -175,7 +168,6 @@ bool ContactForceDistribution::prepareOptimization(
     const Force& virtualForce,
     const Torque& virtualTorque)
 {
-    std::cout << "Runnning the prepare optimization" << std::endl;
   n_ = footDof_ * nLegsInForceDistribution_;//! WSHY: rows of x, columns of A
 
   /*
@@ -189,7 +181,6 @@ bool ContactForceDistribution::prepareOptimization(
 
   A_.resize(nElementsVirtualForceTorqueVector_, n_);
   A_.setZero();
-  std::cout << "A_ size is " << A_.size() << std::endl;
   //! WSHY: set the upper 3 rows as identity
   A_.middleRows(0, footDof_) = (Matrix3d::Identity().replicate(1, nLegsInForceDistribution_)).sparseView();
 
@@ -232,7 +223,6 @@ if(is_minForceDiff_)
 
 bool ContactForceDistribution::addMinimalForceConstraints()
 {
-    std::cout <<"addMinimalForceConstraints" << std::endl;
   /* We want each stance leg to have a minimal force in the normal direction to the ground:
    * n.f_i >= n.f_min with n.f_i the normal component of contact force.
    * inequality constraints : d <= Dx <= f
@@ -284,7 +274,6 @@ bool ContactForceDistribution::addFrictionConstraints()
    * We have to define these constraints for both tangential directions (approximation of the
    * friction cone).
    */
-  std::cout <<"addFrictionConstraints" << std::endl;
   int nDirections = 4;
   int nConstraints = nDirections * nLegsInForceDistribution_;
   int rowIndex = D_.rows();
@@ -362,8 +351,6 @@ bool ContactForceDistribution::addFrictionConstraints()
 
 bool ContactForceDistribution::addDesiredLegLoadConstraints()
 {
-    std::cout <<"addDesiredLegLoadConstraints" << std::endl;
-
   /*
    * The contact force distribution is calculated
    * twice, once without the load factor equality constraint and then
@@ -412,8 +399,6 @@ bool ContactForceDistribution::addDesiredLegLoadConstraints()
 
 bool ContactForceDistribution::solveOptimization()
 {
-    std::cout <<"solveOptimization" << std::endl;
-
 
   // Finds x that minimizes (Ax-b)' S (Ax-b) + x' W x, such that Cx = c and d <= Dx <= f
   //! WSHY:
@@ -524,9 +509,7 @@ bool ContactForceDistribution::solveOptimization()
           ROS_ERROR("Contact Force is Minus !!!!!!!!!!!!!!!!!!!!");
           return false;
         }
-        std::cout << "A_ size is " << A_.size() << A_.size() << std::endl;
-        std::cout << "x_ size is " << x_.size() << std::endl;
-////    }else{
+//    }else{
 //      if (!ooqpei::QuadraticProblemFormulation::solve(A_, S_, b_, W_, H_, C_, c_, D_, d_, f_, x_pre_, x_))
 //        {
 //          ROS_ERROR("Contact Force is Minus !!!!!!!!!!!!!!!!!!!!");
@@ -556,7 +539,6 @@ bool ContactForceDistribution::solveOptimization()
 
 bool ContactForceDistribution::computeJointTorques()
 {
-    std::cout <<"computeJointTorques" << std::endl;
   const LinearAcceleration gravitationalAccelerationInWorldFrame = LinearAcceleration(0.0,0.0,-9.8);//torso_->getProperties().getGravity();
   const LinearAcceleration gravitationalAccelerationInBaseFrame = robot_state_->getOrientationBaseToWorld().inverseRotate(gravitationalAccelerationInWorldFrame);//torso_->getMeasuredState().getOrientationWorldToBase().rotate(gravitationalAccelerationInWorldFrame);
 
@@ -621,7 +603,6 @@ bool ContactForceDistribution::computeJointTorques()
 
 bool ContactForceDistribution::resetOptimization()
 {
-    std::cout <<"resetOptimization" << std::endl;
   isForceDistributionComputed_ = false;
 
   D_.resize(0, 0);
@@ -658,24 +639,12 @@ bool ContactForceDistribution::resetOptimization()
 bool ContactForceDistribution::getNetForceAndTorqueOnBase(
     Force& netForce, Torque& netTorque)
 {
-    std::cout << "what cause the error?" << std::endl;
-  if (!checkIfForceDistributionComputed())
-    {
-       std::cout << "false?" << std::endl;
-      return false;
-  }
+  if (!checkIfForceDistributionComputed()) return false;
 
   Eigen::Matrix<double, nElementsVirtualForceTorqueVector_, 1> stackedNetForceAndTorque;
-  std::cout << "construct" << std::endl;
-  std::cout << "A_ IS" << A_.size() << std::endl;
-  std::cout << "x_ is" << x_.size() << std::endl;
   stackedNetForceAndTorque = A_ * x_;
-  std::cout << "compute" << std::endl;
   netForce = Force(stackedNetForceAndTorque.head(3));
-  std::cout << "netforce success" << std::endl;
   netTorque = Torque(stackedNetForceAndTorque.tail(3));
-  std::cout << "nettorque success" << std::endl;
-  std::cout << "success solved" << std::endl;
 
   return true;
 }

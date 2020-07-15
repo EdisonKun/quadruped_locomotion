@@ -7,18 +7,28 @@ project(quadruped_model)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
+set(ct_core_DIR /usr/local/share/ct_core/cmake)
+set(ct_models_DIR /usr/local/share/ct_models/cmake)
+set(ct_optcon_DIR /usr/local/share/ct_optcon/cmake)
+set(ct_rbd_DIR /usr/local/share/ct_rbd/cmake)
+
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   kdl_parser
-#  orocos_kdl
-)
+  roslib
+  ct_core
+  ct_models
+  ct_optcon
+  ct_rbd
+#  cppad
+  )
+
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 find_package(Eigen3 REQUIRED)
 find_package(RBDL REQUIRED)
 FIND_PACKAGE (RBDL COMPONENTS URDFReader REQUIRED)
-
 # Attempt to find catkinized kindr
 find_package(kindr QUIET)
 if(NOT kindr_FOUND)
@@ -119,8 +129,11 @@ catkin_package(
   CATKIN_DEPENDS
   roscpp
   kdl_parser
-#  orocos_kdl
-#  DEPENDS system_lib
+  roslib
+  ct_core
+#  ct_models
+  ct_optcon
+  ct_rbd
 )
 
 ###########
@@ -129,11 +142,12 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
+
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
-#  ${RBDL_INCLUDE_DIR}
+  ${RBDL_INCLUDE_DIR}
 )
 
 ## Declare a C++ library
@@ -146,7 +160,7 @@ include_directories(
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+ add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
@@ -170,11 +184,28 @@ include_directories(
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
 add_executable(kinematics_test_node src/kinematicsTest.cpp)
+add_executable(model_dynamics_test_node src/quadruped_dynamics.cpp)
+
+target_link_libraries(model_dynamics_test_node
+  ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+  ${RBDL_LIBRARY}
+  ${RBDL_URDFReader_LIBRARY})
+
 target_link_libraries(kinematics_test_node
   ${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${RBDL_LIBRARY}
   ${RBDL_URDFReader_LIBRARY})
+
+
+
+#target_link_libraries(mpc_test_node
+#  ${PROJECT_NAME}
+#  ${catkin_LIBRARIES}
+#  ${RBDL_LIBRARY}
+#  ${RBDL_URDFReader_LIBRARY})
+
 #############
 ## Install ##
 #############
@@ -215,10 +246,14 @@ target_link_libraries(kinematics_test_node
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_quadruped_model.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
-
+#if (CATKIN_ENABLE_TESTING)
+# catkin_add_gtest(ct_test test/ct_core/JacobianCGTest.h
+#        test/ct_core/AutoDiffLinearizerTest.cpp)
+# target_link_libraries(ct_test
+#          ${PROJECT_NAME}
+#          ${catkin_LIBRARIES}
+#          ${RBDL_LIBRARY}
+#          ${RBDL_URDFReader_LIBRARY})
+#endif()
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)

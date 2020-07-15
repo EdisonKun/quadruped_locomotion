@@ -10,7 +10,8 @@
 #pragma once
 
 #include "controller_interface/controller.h"
-#include "balance_controller/ros_controler/robot_state_interface.hpp"
+//#include "balance_controller/ros_controler/robot_state_interface.hpp"
+#include "/home/kun/catkin_ws_dependency/src/ros_ethercat/ros_ethercat_driver/include/ros_ethercat_driver/hardware_interface/robot_state_interface.hpp"
 #include "hardware_interface/joint_command_interface.h"
 #include "hardware_interface/joint_state_interface.h"
 

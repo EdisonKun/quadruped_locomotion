@@ -46,7 +46,7 @@
 
 namespace balance_controller {
 
-  class RosBalanceController : public controller_interface::Controller<hardware_interface::RobotStateInterface>
+class RosBalanceController : public controller_interface::Controller<hardware_interface::RobotStateInterface>
   {
   typedef std::unordered_map<free_gait::LimbEnum, std::unique_ptr<StateSwitcher>, EnumClassHash> LimbState;
   typedef std::unordered_map<free_gait::LimbEnum, ros::Time, EnumClassHash> LimbDuration;

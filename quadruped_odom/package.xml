@@ -24,7 +24,8 @@
   <build_depend>sim_assiants</build_depend>
   <build_depend>free_gait_core</build_depend>
   <build_depend>qp_solver</build_depend>
-
+  <build_depend>kindr</build_depend>
+  <exec_depend>kindr</exec_depend>
   <exec_depend>free_gait_core</exec_depend>
   <exec_depend>sim_assiants</exec_depend>
   <exec_depend>free_gait_msgs</exec_depend>

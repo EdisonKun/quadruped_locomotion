@@ -71,8 +71,15 @@ private slots:
   void on_setInitialJointPosition_clicked();
 
   void on_crawlButton_clicked();
+  void on_change_X_clicked();
 
-private:
+  void on_change_left_clicked();
+
+  void on_change_right_clicked();
+
+  void on_anti_X_clicked();
+
+  private:
   Ui::rqt_control_panel_plugin_widget *ui;
   ros::NodeHandle nodehandle_;
 
@@ -90,14 +97,18 @@ private:
   ros::Publisher jointVelocityCommandPublisher_;
   ros::Publisher jointEffortCommandPublisher_;
   ros::Publisher baseVelocityCommandPublisher_;
+  ros::Publisher change_to_x_pub_;
+  ros::Publisher change_to_left_pub_;
+  ros::Publisher change_to_right_pub_;
+  ros::Publisher change_to_anti_X_pub_;
+
 
   ros::Subscriber jointStateSubscriber_;
 
   ControlMethod control_method_;
   sensor_msgs::JointState joint_states_;
 
-  void displayOutputInfos(const std::string &color,
-                                                  const QString &context);
+  void displayOutputInfos(const std::string &color,const QString &context);
 
   void updateCommandLoop();
 

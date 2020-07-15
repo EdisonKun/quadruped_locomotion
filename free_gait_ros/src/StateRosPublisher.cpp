@@ -103,7 +103,6 @@ bool StateRosPublisher::initializeRobotStatePublisher()
 
 bool StateRosPublisher::publish(const State& state)
 {
-    ROS_INFO("publish robot state");
   const ros::Time time = ros::Time::now();
 
   // Publish joint states.
@@ -158,11 +157,6 @@ bool StateRosPublisher::publish(const State& state)
                                            LocalAngularVelocity(state.getTargetAngularVelocityBaseInBaseFrame())),
                                      robot_state_.base_pose.twist.twist);
 //  ROS_INFO("In ros state publisher");
-  std::cout << "publish state is" << std::endl;
-  ROS_WARN_STREAM(state.isSupportLeg(LimbEnum::LF_LEG));
-  ROS_WARN_STREAM(state.isSupportLeg(LimbEnum::RF_LEG));
-  ROS_WARN_STREAM(state.isSupportLeg(LimbEnum::LH_LEG));
-  ROS_WARN_STREAM(state.isSupportLeg(LimbEnum::RH_LEG));
   if(state.isSupportLeg(LimbEnum::LF_LEG))
       {
         robot_state_.lf_leg_mode.support_leg = true;
@@ -245,7 +239,6 @@ bool StateRosPublisher::publish(const State& state)
 
 bool StateRosPublisher::publish(const State& state, const StepQueue& step_queue)
 {
-    ROS_INFO("publish robot state");
   const ros::Time time = ros::Time::now();
 
   // Publish joint states.
@@ -340,11 +333,6 @@ bool StateRosPublisher::publish(const State& state, const StepQueue& step_queue)
 //  ROS_WARN(" Flag 1");
 //  if(!step_queue.empty())
 //    {
-  std::cout << "publish state is" << std::endl;
-  ROS_WARN_STREAM(state.isSupportLeg(LimbEnum::LF_LEG));
-  ROS_WARN_STREAM(state.isSupportLeg(LimbEnum::RF_LEG));
-  ROS_WARN_STREAM(state.isSupportLeg(LimbEnum::LH_LEG));
-  ROS_WARN_STREAM(state.isSupportLeg(LimbEnum::RH_LEG));
   if(state.isSupportLeg(LimbEnum::LF_LEG))// || !step_queue.getCurrentStep().hasLegMotion(LimbEnum::LF_LEG))
       {
 //      ROS_WARN(" Flag 2");

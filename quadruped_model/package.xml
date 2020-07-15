@@ -56,6 +56,22 @@
   <build_depend>orocos_kdl</build_depend>
   <exec_depend>kdl_parser</exec_depend>
   <exec_depend>orocos_kdl</exec_depend>
+  <build_depend>roslib</build_depend>
+  <exec_depend>roslib</exec_depend>
+  <build_depend>ct_core</build_depend>
+  <exec_depend>ct_core</exec_depend>
+  <build_depend>ct_rbd</build_depend>
+  <exec_depend>ct_rbd</exec_depend>
+  <build_depend>ct_models</build_depend>
+  <exec_depend>ct_models</exec_depend>
+  <build_depend>ct_optcon</build_depend>
+  <exec_depend>ct_optcon</exec_depend>
+  <test_depend>rosunit</test_depend>
+  <build_depend>rostest</build_depend>
+  <!--<build_depend>cppad</build_depend>
+  <exec_depend>cppad</exec_depend>
+  <build_depend>cppadcg</build_depend>
+  <exec_depend>cppadcg</exec_depend>-->
 
 
   <!-- The export tag contains other, unspecified, tags -->

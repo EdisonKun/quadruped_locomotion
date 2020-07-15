@@ -294,11 +294,11 @@ bool VirtualModelController::computeVirtualTorque()
 //                       + gravityCompensationTorqueInBaseFrame_;
 
   virtualTorqueInBaseFrame_ = Torque(proportionalGainRotation_.cwiseProduct(orientationError_))
-                              //      +Torque(derivativeGainRotation_.cwiseProduct(angularVelocityErrorInControlFrame_.toImplementation()))
-                              //      +Torque(feedforwardGainRotation_.cwiseProduct(feedforwardTermInControlFrame))
-                              +orientationControlToBase.rotate(Torque(derivativeGainRotation_.cwiseProduct(angularVelocityErrorInControlFrame_.toImplementation())))
-                              +orientationControlToBase.rotate(Torque(feedforwardGainRotation_.cwiseProduct(feedforwardTermInControlFrame)))
-                              + gravityCompensationTorqueInBaseFrame_;
+//      +Torque(derivativeGainRotation_.cwiseProduct(angularVelocityErrorInControlFrame_.toImplementation()))
+//      +Torque(feedforwardGainRotation_.cwiseProduct(feedforwardTermInControlFrame))
+                       +orientationControlToBase.rotate(Torque(derivativeGainRotation_.cwiseProduct(angularVelocityErrorInControlFrame_.toImplementation())))
+                       +orientationControlToBase.rotate(Torque(feedforwardGainRotation_.cwiseProduct(feedforwardTermInControlFrame)))
+                       + gravityCompensationTorqueInBaseFrame_;
 
 //  std::cout << "--------------------" << std::endl
 //      << "ornt err: " << Torque(proportionalGainRotation_.cwiseProduct(orientationError_)) << std::endl
@@ -355,9 +355,7 @@ Torque VirtualModelController::getDesiredVirtualTorqueInBaseFrame() const {
 }
 
 void VirtualModelController::getDistributedVirtualForceAndTorqueInBaseFrame(Force& netForce, Torque& netTorque) const {
-    std::cout << "error here what?" << std::endl;
   contactForceDistribution_->getNetForceAndTorqueOnBase(netForce, netTorque);
-  std::cout << "error here?" << std::endl;
 }
 /**
  * @brief VirtualModelController::loadParameters, replace it with rosparam

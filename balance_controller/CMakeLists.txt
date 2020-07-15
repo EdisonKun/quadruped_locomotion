@@ -191,13 +191,6 @@ target_link_libraries(robot_state_gazebo_ros_control_plugin
   gazebo_state_hardware_interface
   )
 
-add_library(configure_change_controller
-    src/ros_controller/configure_change_controller.cpp
-  )
-target_link_libraries(configure_change_controller
-  ${catkin_LIBRARIES}
-  )
-
 add_library(state_estimate_controller
   src/ros_controller/state_estimate_controller.cpp
   )
@@ -251,6 +244,11 @@ target_link_libraries(balance_controller_manager
   ${PROJECT_NAME}
   ${catkin_LIBRARIES}
   )
+add_library(configure_change_controller
+    src/ros_controller/configure_change_controller.cpp
+    )
+target_link_libraries(configure_change_controller ${PROJECT_NAME} ${catkin_LIBRARIES})
+
 
 #############
 ## Install ##

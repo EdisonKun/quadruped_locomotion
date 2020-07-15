@@ -126,8 +126,9 @@ namespace balance_controller {
     for(unsigned int i = 0; i < n_joints; i++)
       {
         try {
+          std::cout << "get handle " << joint_names[i] << std::endl;
           joints.push_back(hardware->joint_effort_interfaces_.getHandle(joint_names[i]));
-          position_joints.push_back(hardware->joint_position_interfaces_.getHandle(joint_names[i]));
+//          position_joints.push_back(hardware->getHandle(joint_names[i]));
           ROS_INFO("Get '%s' Handle", joint_names[i].c_str());
         } catch (const hardware_interface::HardwareInterfaceException& ex) {
           ROS_ERROR_STREAM("Exception thrown : "<< ex.what());
@@ -137,13 +138,13 @@ namespace balance_controller {
 
     ROS_INFO("Balance Controller to Get robot state handle");
     //! WSHY: get robot state handle
-    robot_state_handle = hardware->getHandle("base_controller");
+//    robot_state_handle = hardware->getHandle("base_controller");
 
     ROS_INFO("Balance Controller initialized");
     for(unsigned int i=0;i<12;i++)
       {
         robot_state_handle.getJointEffortWrite()[i] = 0;
-        robot_state_handle.motor_status_word_[i] = 0;
+//        robot_state_handle.motor_status_word_[i] = 0;
       }
     for(int i = 0;i<4;i++)
       {
@@ -271,7 +272,7 @@ namespace balance_controller {
                 for(int j = start_index;j<start_index +3;j++)
                   {
                     joints[j].setCommand(jointTorques(j));
-                    robot_state_handle.mode_of_joint_[j] = 4;
+//                    robot_state_handle.mode_of_joint_[j] = 4;
                   }
                 continue;
               }
@@ -283,7 +284,7 @@ namespace balance_controller {
 //                    if(is_cartisian_motion_.at(limb))
 //                      effort_command = single_leg_solver_->getVecTauAct()[j];
                     joints[j].setCommand(0.0);
-                    robot_state_handle.mode_of_joint_[j] = 4;
+//                    robot_state_handle.mode_of_joint_[j] = 4;
 
                   }
                 continue;
@@ -292,7 +293,7 @@ namespace balance_controller {
               {
                 for(int j = start_index;j<start_index +3;j++)
                   {
-                    robot_state_handle.mode_of_joint_[j] = 1;
+//                    robot_state_handle.mode_of_joint_[j] = 1;
                     position_joints[j].setCommand(joint_commands_[j]);
                   }
                 ROS_INFO_ONCE("Joint control");
@@ -307,7 +308,7 @@ namespace balance_controller {
 
                 for(int j = start_index;j<start_index +3;j++)
                   {
-                    robot_state_handle.mode_of_joint_[j] = 4;
+//                    robot_state_handle.mode_of_joint_[j] = 4;
                     q_state.name.push_back("joint"+std::to_string(j));
                     q_state.effort.push_back(single_leg_solver_->getVecTauAct()[j - start_index]);
                     q_state.velocity.push_back(single_leg_solver_->getVecQDDAct()[j - start_index]);
@@ -338,7 +339,7 @@ namespace balance_controller {
                 for(int j = start_index;j<start_index +3;j++)
                   {
                     joints[j].setCommand(jointTorques(j));
-                    robot_state_handle.mode_of_joint_[j] = 4;
+//                    robot_state_handle.mode_of_joint_[j] = 4;
                   }
                 std::cout<<"Joint Torque to Apply is : "<<jointTorques<<std::endl;
                 continue;
@@ -347,7 +348,7 @@ namespace balance_controller {
               {
                 for(int j = start_index;j<start_index +3;j++)
                   {
-                    robot_state_handle.mode_of_joint_[j] = 1;
+//                    robot_state_handle.mode_of_joint_[j] = 1;
                     position_joints[j].setCommand(joint_commands_[j]);
                   }
                 ROS_INFO_ONCE("Joint control");

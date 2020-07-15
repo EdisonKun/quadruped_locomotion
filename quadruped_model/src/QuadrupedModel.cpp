@@ -2,8 +2,8 @@
  *  QuadrupedModel.cpp
  *  Descriotion:
  *
- *  Created on: Mar 3, 2019
- *  Author: Shunyao Wang
+ *  Created on: Dec 25, 2019
+ *  Author: Peng Kang
  *  Institute: Harbin Institute of Technology, Shenzhen
  */
 #include "quadruped_model/QuadrupedModel.hpp"

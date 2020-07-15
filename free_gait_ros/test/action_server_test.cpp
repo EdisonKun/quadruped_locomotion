@@ -130,9 +130,17 @@ public:
       rosPublisher->publish(AdapterRos_.getAdapter().getState());
       while (ros::ok()) {
           server_->update();
+//          ROS_INFO("Action Server updated Once");
+//          AdapterRos_.updateAdapterWithState();
+//          cout<<"Current base position : "<<AdapterRos_.getAdapter().getPositionWorldToBaseInWorldFrame()<<endl;
+
+//          TODO(Shunyao): How to Update?
+//          cout<<"Current base position : "<<AdapterRos_.getAdapter().getPositionWorldToBaseInWorldFrame()<<endl;
+//          cout<<"joint position: "<<AdapterRos_.getAdapter().getAllJointPositions()<<endl;
           if (!executor->getQueue().empty()&&!is_pause&&!is_stop) {
-              boost::recursive_mutex::scoped_lock lock(r_mutex_);
-              AdapterRos_.updateAdapterWithState();
+            boost::recursive_mutex::scoped_lock lock(r_mutex_);
+            AdapterRos_.updateAdapterWithState();
+
             executor->advance(dt, false);
             if(is_start_gait && !gait_generate_client_.ignore_vd){
                 state->setLinearVelocityBaseInWorldFrame(desired_linear_velocity_);

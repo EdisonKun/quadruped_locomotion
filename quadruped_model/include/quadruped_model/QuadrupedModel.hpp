@@ -2,7 +2,6 @@
 
 #include "kindr/Core"
 #include <quadruped_model/common/typedefs.hpp>
-//#include "quadruped_model/quadrupedkinematics.h"
 
 struct EnumClassHash
 {
@@ -76,13 +75,6 @@ public:
             RH_LEG_KFE,
         };
 
-//        template<enum L, enum B>
-//        static B mapEnums(L Enum)
-//        {
-//          int index = static_cast<int>(Enum);
-//          index = index +1;
-//          return static_cast<B>(index);
-//        }
         static BranchEnum mapEnums(LimbEnum le)
         {
           int index = static_cast<int>(le);
