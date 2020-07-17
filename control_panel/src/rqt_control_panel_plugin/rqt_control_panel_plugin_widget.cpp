@@ -14,6 +14,7 @@ rqt_control_panel_plugin_widget::rqt_control_panel_plugin_widget(const ros::Node
   ui->Controllers->setTabText(3, "Joint Effort");
   ui->Controllers->setTabText(4, "Single Leg Control");
   ui->Controllers->setTabText(5, "configure controller");
+  ui->Controllers->setTabText(6, "walk forward controller");
 
   switchControllerClient_ = nodehandle_.serviceClient<controller_manager_msgs::SwitchController>
       ("/controller_manager/switch_controller", false);
@@ -290,6 +291,24 @@ void rqt_control_panel_plugin_widget::on_Controllers_currentChanged(int index)
             control_method_ = JOINT_POSITION;
             displayOutputInfos("green", "Switch to JOINT_POSITION");
         }
+
+        }else if (tab_name == "walk forward controller") {
+            std::cout<<"walk forward controller"<<std::endl;
+            e_stop_msg.data = false;
+            eStopPublisher_.publish(e_stop_msg);
+            controller_switch.request.start_controllers.push_back("walk_forward_controller");
+            controller_switch.request.stop_controllers.push_back(current_controller.c_str());
+            controller_switch.request.strictness = controller_switch.request.STRICT;
+            switchControllerClient_.call(controller_switch.request, controller_switch.response);
+
+            control_method.request.configure = "Joint Position";
+            switchControlMethodClient_.call(control_method.request, control_method.response);
+
+            if(controller_switch.response.ok && control_method.response.result)
+            {
+                control_method_ = JOINT_POSITION;
+                displayOutputInfos("green", "Switch to JOINT_POSITION");
+            }
 
         }
 }

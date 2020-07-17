@@ -33,10 +33,11 @@ find_package(catkin REQUIRED COMPONENTS
   single_leg_test
   ros_ethercat_driver
   dynamic_reconfigure
+  rosbag
 )
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+ find_package(Boost REQUIRED QUIET)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -149,6 +150,7 @@ catkin_package(
   realtime_tools
   sim_assiants
   ooqp_eigen_interface
+  rosbag
 #  DEPENDS system_lib
 )
 
@@ -161,6 +163,7 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -224,6 +227,15 @@ target_link_libraries(state_estimate_controller
 # add_executable(${PROJECT_NAME}_node src/balance_controller_node.cpp)
 add_executable(balance_controller_test_node test/test.cpp)
 add_executable(balance_controller_manager src/ros_controller/balance_controller_manager.cpp)
+add_executable(read_rosbag_file_test_node test/read_rosbag_file_test.cpp)
+target_link_libraries(read_rosbag_file_test_node
+  ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARY_DIRS}
+  )
+
+
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -250,6 +262,11 @@ add_library(configure_change_controller
     src/ros_controller/configure_change_controller.cpp
     )
 target_link_libraries(configure_change_controller ${PROJECT_NAME} ${catkin_LIBRARIES})
+
+add_library(walk_forward_controller
+    src/ros_controller/walk_forward_controller.cpp
+    )
+target_link_libraries(walk_forward_controller ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 
 #############

@@ -281,7 +281,7 @@ namespace balance_controller{
   {
 //    double real_time_factor = 0.001/period.toSec();
 //    ROS_WARN_STREAM("Real Time Factor :"<<real_time_factor<<std::endl);
-    ROS_INFO("Balance Controller Update Once");
+//    ROS_INFO("Balance Controller Update Once");
 
     //! WSHY: for logging data
     sensor_msgs::JointState joint_command, joint_actual;
@@ -865,7 +865,7 @@ namespace balance_controller{
       }
 //    lock.unlock();
     //! WSHY: data logging
-      ROS_INFO_STREAM("data loging");
+//      ROS_INFO_STREAM("data loging");
     if(log_data)//base_actual_pose_.size()<log_length_)
       {
         motor_status_word_.push_back(status_word);
@@ -879,32 +879,32 @@ namespace balance_controller{
         desired_vmc_ft.header.stamp = ros::Time::now();
         Force net_force;
         Torque net_torque;
-        ROS_INFO_STREAM("ending61");
-        ROS_INFO_STREAM("ending62");
+//        ROS_INFO_STREAM("ending/61");
+//        ROS_INFO_STREAM("ending62");
         virtual_model_controller_->getDistributedVirtualForceAndTorqueInBaseFrame(net_force, net_torque);
-        ROS_INFO_STREAM("ending62");
+//        ROS_INFO_STREAM("ending62");
         kindr_ros::convertToRosGeometryMsg(Position(virtual_model_controller_->getDesiredVirtualForceInBaseFrame().vector()),
                                            desired_vmc_ft.wrench.force);
-        ROS_INFO_STREAM("ending63");
+//        ROS_INFO_STREAM("ending63");
         kindr_ros::convertToRosGeometryMsg(Position(virtual_model_controller_->getDesiredVirtualTorqueInBaseFrame().vector()),
                                            desired_vmc_ft.wrench.torque);
-        ROS_INFO_STREAM("ending64");
+//        ROS_INFO_STREAM("ending64");
         kindr_ros::convertToRosGeometryMsg(Position(net_force.vector()),
                                            vmc_force_torque.wrench.force);
-        ROS_INFO_STREAM("ending65");
+//        ROS_INFO_STREAM("ending65");
         kindr_ros::convertToRosGeometryMsg(Position(net_torque.vector()),
                                            vmc_force_torque.wrench.torque);
-        ROS_INFO_STREAM("ending66");
+//        ROS_INFO_STREAM("ending66");
         vitual_force_torque_.push_back(vmc_force_torque);
-        ROS_INFO_STREAM("ending67");
+//        ROS_INFO_STREAM("ending67");
         desired_vitual_force_torque_.push_back(desired_vmc_ft);
-        ROS_INFO_STREAM("ending68");
+//        ROS_INFO_STREAM("ending68");
 
         free_gait_msgs::RobotState desired_robot_state, actual_robot_state;
         desired_robot_state.lf_target.target_position.resize(1);
         desired_robot_state.lf_target.target_velocity.resize(1);
         desired_robot_state.lf_target.target_force.resize(1);
-        ROS_INFO_STREAM("ending64312123");
+//        ROS_INFO_STREAM("ending64312123");
 //        desired_robot_state.lf_leg_joints.position.resize(3);
 //        desired_robot_state.lf_leg_joints.effort.resize(3);
 //        desired_robot_state.lf_leg_joints.velocity.resize(3);
@@ -958,7 +958,7 @@ namespace balance_controller{
         actual_robot_state.lh_target.target_position.resize(1);
         actual_robot_state.lh_target.target_velocity.resize(1);
         actual_robot_state.lh_target.target_force.resize(1);
-        ROS_INFO_STREAM("ending632452");
+//        ROS_INFO_STREAM("ending632452");
 //        actual_robot_state.lh_leg_joints.position.resize(3);
 //        actual_robot_state.lh_leg_joints.effort.resize(3);
 //        actual_robot_state.lh_leg_joints.velocity.resize(3);
@@ -987,7 +987,7 @@ namespace balance_controller{
         kindr_ros::convertToRosGeometryMsg(base_desired_angular_velocity, desired_twist.angular);
         kindr_ros::convertToRosGeometryMsg(current_vel_in_base, actual_twist.linear);
         kindr_ros::convertToRosGeometryMsg(current_pose_in_base, actual_pose);
-        ROS_INFO_STREAM("ending2136");
+//        ROS_INFO_STREAM("ending2136");
         //! WSHY: for pose & twist in World Frame (uncomment the followinf 8 lines)
 //        kindr_ros::convertToRosGeometryMsg(base_desired_position, desired_pose.position);
 //        kindr_ros::convertToRosGeometryMsg(base_desired_rotation, desired_pose.orientation);
@@ -1020,7 +1020,7 @@ namespace balance_controller{
         joint_commands_leg.resize(4);
         std::vector<free_gait::Force> real_contact_forces;
         real_contact_forces.resize(4);
-        ROS_INFO_STREAM("ending432");
+//        ROS_INFO_STREAM("ending432");
 
         for(int i = 0; i<4; i++)
           {
@@ -1093,7 +1093,7 @@ namespace balance_controller{
         desired_robot_state.rf_leg_joints = joint_commands_leg[1];
         desired_robot_state.rh_leg_joints = joint_commands_leg[2];
         desired_robot_state.lh_leg_joints = joint_commands_leg[3];
-        ROS_INFO_STREAM("ending5");
+//        ROS_INFO_STREAM("ending5");
 
         desired_robot_state.lf_leg_mode.support_leg = limbs_desired_state.at(free_gait::LimbEnum::LF_LEG)->getState();
         desired_robot_state.rf_leg_mode.support_leg = limbs_desired_state.at(free_gait::LimbEnum::RF_LEG)->getState();
@@ -1148,10 +1148,10 @@ namespace balance_controller{
         actual_robot_state.lh_leg_mode.surface_normal.vector.z = real_contact_force_.at(free_gait::LimbEnum::LH_LEG).z();
 
         actual_robot_state_.push_back(actual_robot_state);
-        ROS_INFO_STREAM("ending_2");
+//        ROS_INFO_STREAM("ending_2");
       }
 
-      ROS_INFO_STREAM("ending");
+//      ROS_INFO_STREAM("/ending");
   }
 
   double RosBalanceController::computeTorqueFromPositionCommand(double command, int i, const ros::Duration& period)

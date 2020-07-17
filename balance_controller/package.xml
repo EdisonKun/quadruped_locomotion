@@ -83,6 +83,7 @@
   <depend>single_leg_test</depend>
   <depend>ros_ethercat_driver</depend>
   <depend>dynamic_reconfigure</depend>
+  <depend>rosbag</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

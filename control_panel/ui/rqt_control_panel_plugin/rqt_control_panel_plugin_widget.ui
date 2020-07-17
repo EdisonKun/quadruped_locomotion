@@ -1111,7 +1111,7 @@
        </property>
       </widget>
      </widget>
-     <widget class="QWidget" name="tab_2">
+     <widget class="QWidget" name="walkforwardcontroller">
       <attribute name="title">
        <string>Page</string>
       </attribute>
