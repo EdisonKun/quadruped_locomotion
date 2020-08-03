@@ -79,12 +79,6 @@ walk_forward_controller::walk_forward_controller()
     }
     std::cout << "finish the data convert" << std::endl;
     std::cout << "the data length is " << joint_angle.size();
-//    for (unsigned int i = 0; i < joint_angle.size(); i++) {
-//        std::cout << "joint angle of " << i << " is ";
-//        for (unsigned int joint_num = 0; joint_num < 12; joint_num++) {
-//            std::cout << joint_angle[i].at(joint_num) << " ";
-//        }
-//    }
 
     iteration = 0;
 }//walk_forward_controller
@@ -172,9 +166,7 @@ bool walk_forward_controller::init(hardware_interface::RobotStateInterface *hard
 
 void walk_forward_controller::update(const ros::Time &time, const ros::Duration &period)
 {
-
-
-
+    ROS_INFO_STREAM("Controller update once");
     sensor_msgs::JointState joint_command, joint_actual;
     joint_command.effort.resize(12);
     joint_command.position.resize(12);
@@ -190,35 +182,26 @@ void walk_forward_controller::update(const ros::Time &time, const ros::Duration 
     leg_state.resize(4);
 
     for (unsigned int i = 0; i < 12; i++) {
-        joint_actual.position[i] = robot_state_handle_.getJointPositionRead()[i];//actual joint
+        joint_actual.position[i] = robot_state_handle_.getJointPositionRead()[i];
         joint_actual.name[i] = joint_names_.at(i);
         joint_command.name[i] = joint_names_.at(i);
-//        ROS_INFO_STREAM("joint_actual_position of joint " << i << " is " << joint_actual.position[i]);
     }
 
     if(init_joint_flag)
     {
-//        ROS_WARN_STREAM("Init the joint angle");
         free_gait::JointPositions jointpositions;
-//        std::cout << "the joint angle is ";
         for (unsigned int i = 0; i < 12 ; i++) {
             joint_init.position[i] = joint_actual.position[i];
             jointpositions(i) = joint_actual.position[i];
-//            std::cout << joint_init.position[i] << " ";
         }
         std::cout << std::endl;
        init_joint_flag = false;
-       robot_state_->setAllJointPositions(jointpositions);
-//       ROS_INFO_STREAM("The initial foot state is " << robot_state_->getPoseFootInBaseFrame(quadruped_model::LimbEnum::LF_LEG));
-
+       robot_state_->setAllJointPositions(jointpositions);//current
     }
-//    ROS_INFO_STREAM("joint_actual_position of joint 3 is " << joint_actual.position[2]);
-
     robot_state_->setPositionWorldToBaseInWorldFrame(base_desired_position_);//target? is target!
     robot_state_->setOrientationBaseToWorld(base_desired_rotation_);
     robot_state_->setLinearVelocityBaseInWorldFrame(base_desired_linear_velocity_);
     robot_state_->setAngularVelocityBaseInBaseFrame(base_desired_angular_velocity_);
-    //    robot_state_->setCurrentLimbJoints(all_joint_positions_);
 
     Pose current_base_pose = Pose(Position(robot_state_handle_.getPosition()[0],
                                            robot_state_handle_.getPosition()[1],
@@ -236,154 +219,20 @@ void walk_forward_controller::update(const ros::Time &time, const ros::Duration 
                                                                 robot_state_handle_.getAngularVelocity()[1],
                                                                 robot_state_handle_.getAngularVelocity()[2]));
 
-    free_gait::JointPositionsLeg joint_positions_lf, joint_positions_rf, joint_positions_rh, joint_positions_lh;
-
-    if(configure_time_start_flag_)
+    if(iteration < joint_angle.size())
     {
-        trajectory_lf_.evaluate(values_joint_1, dt_);
-        trajectory_rf_.evaluate(values_joint_2, dt_);
-        trajectory_rh_.evaluate(values_joint_3, dt_);
-        trajectory_lh_.evaluate(values_joint_4, dt_);
-//        std::cout << "value is" << values_joint_1 <<" " << "time is" << dt_ << std::endl;
-
-        double x_init = 0.427;
-        double y_init = 0.305;
-        foot_pose_to_base_in_base_frame[0].getPosition().z() = values_joint_1;
-        foot_pose_to_base_in_base_frame[0].getPosition().x() = x_init;
-        foot_pose_to_base_in_base_frame[0].getPosition().y() = y_init;
-
-        foot_pose_to_base_in_base_frame[1].getPosition().z() = values_joint_2;
-        foot_pose_to_base_in_base_frame[1].getPosition().x() = x_init;
-        foot_pose_to_base_in_base_frame[1].getPosition().y() = -y_init;
-
-        foot_pose_to_base_in_base_frame[2].getPosition().z() = values_joint_3;
-        foot_pose_to_base_in_base_frame[2].getPosition().x() = -x_init;
-        foot_pose_to_base_in_base_frame[2].getPosition().y() = -y_init;
-
-        foot_pose_to_base_in_base_frame[3].getPosition().z() = values_joint_4;
-        foot_pose_to_base_in_base_frame[3].getPosition().x() = -x_init;
-        foot_pose_to_base_in_base_frame[3].getPosition().y() = y_init;
-
-//        ROS_INFO_STREAM_ONCE("foot_pose_to_base_in_base_frame in update is " << foot_pose_to_base_in_base_frame[0].getPosition());
-
-        if(dt_ <= (knot_num_ * 0.6 / 2) )
-        {
-//            ROS_INFO_STREAM("the knot_num_ /2 time values is " << values_joint_1 << values_joint_2 << values_joint_3 << values_joint_4 <<"time dt_ is" << dt_);
-
-            if(configure_last_ == "x_configure")
-            {
-                ROS_INFO_STREAM_ONCE("in the x configure");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[0].getPosition(),
-                                                       quadruped_model::LimbEnum::LF_LEG,joint_positions_lf, joint_positions_lf,"IN_LEFT");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[1].getPosition(),
-                                                       quadruped_model::LimbEnum::RF_LEG,joint_positions_rf, joint_positions_rf,"OUT_LEFT");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[2].getPosition(),
-                                                       quadruped_model::LimbEnum::RH_LEG,joint_positions_rh, joint_positions_rh,"IN_LEFT");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[3].getPosition(),
-                                                       quadruped_model::LimbEnum::LH_LEG,joint_positions_lh, joint_positions_lh,"OUT_LEFT");
-            }else if (configure_last_ == "left_configure") {
-                ROS_INFO_STREAM_ONCE("in theh left configure");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[0].getPosition(),
-                                                       quadruped_model::LimbEnum::LF_LEG,joint_positions_lf, joint_positions_lf,"IN_LEFT");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[1].getPosition(),
-                                                       quadruped_model::LimbEnum::RF_LEG,joint_positions_rf, joint_positions_rf,"OUT_LEFT");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[2].getPosition(),
-                                                       quadruped_model::LimbEnum::RH_LEG,joint_positions_rh, joint_positions_rh,"OUT_LEFT");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[3].getPosition(),
-                                                       quadruped_model::LimbEnum::LH_LEG,joint_positions_lh, joint_positions_lh,"IN_LEFT");
-            }else if (configure_last_ == "right_configure") {
-                ROS_INFO_STREAM_ONCE("in the right configure");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[0].getPosition(),
-                                                       quadruped_model::LimbEnum::LF_LEG,joint_positions_lf, joint_positions_lf,"OUT_LEFT");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[1].getPosition(),
-                                                       quadruped_model::LimbEnum::RF_LEG,joint_positions_rf, joint_positions_rf,"IN_LEFT");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[2].getPosition(),
-                                                       quadruped_model::LimbEnum::RH_LEG,joint_positions_rh, joint_positions_rh,"IN_LEFT");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[3].getPosition(),
-                                                       quadruped_model::LimbEnum::LH_LEG,joint_positions_lh, joint_positions_lh,"OUT_LEFT");
-            }else if (configure_last_ == "anti_x_configure") {
-
-                ROS_INFO_STREAM_ONCE("in the anti x configure");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[0].getPosition(),
-                                                       quadruped_model::LimbEnum::LF_LEG,joint_positions_lf, joint_positions_lf,"OUT_LEFT");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[1].getPosition(),
-                                                       quadruped_model::LimbEnum::RF_LEG,joint_positions_rf, joint_positions_rf,"IN_LEFT");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[2].getPosition(),
-                                                       quadruped_model::LimbEnum::RH_LEG,joint_positions_rh, joint_positions_rh,"OUT_LEFT");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[3].getPosition(),
-                                                       quadruped_model::LimbEnum::LH_LEG,joint_positions_lh, joint_positions_lh,"IN_LEFT");
-            }
-
-        }else {
-            if(configure_now_ == "x_configure")
-            {
-                ROS_INFO_STREAM_ONCE("now is the x configure");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[0].getPosition(),
-                                                       quadruped_model::LimbEnum::LF_LEG,joint_positions_lf, joint_positions_lf,"IN_LEFT");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[1].getPosition(),
-                                                       quadruped_model::LimbEnum::RF_LEG,joint_positions_rf, joint_positions_rf,"OUT_LEFT");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[2].getPosition(),
-                                                       quadruped_model::LimbEnum::RH_LEG,joint_positions_rh, joint_positions_rh,"IN_LEFT");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[3].getPosition(),
-                                                       quadruped_model::LimbEnum::LH_LEG,joint_positions_lh, joint_positions_lh,"OUT_LEFT");
-            }else if (configure_now_ == "left_configure") {
-                ROS_INFO_STREAM_ONCE("now is the left configure");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[0].getPosition(),
-                                                       quadruped_model::LimbEnum::LF_LEG,joint_positions_lf, joint_positions_lf,"IN_LEFT");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[1].getPosition(),
-                                                       quadruped_model::LimbEnum::RF_LEG,joint_positions_rf, joint_positions_rf,"OUT_LEFT");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[2].getPosition(),
-                                                       quadruped_model::LimbEnum::RH_LEG,joint_positions_rh, joint_positions_rh,"OUT_LEFT");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[3].getPosition(),
-                                                       quadruped_model::LimbEnum::LH_LEG,joint_positions_lh, joint_positions_lh,"IN_LEFT");
-            }else if (configure_now_ == "right_configure") {
-                ROS_INFO_STREAM_ONCE("now is the right configure");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[0].getPosition(),
-                                                       quadruped_model::LimbEnum::LF_LEG,joint_positions_lf, joint_positions_lf,"OUT_LEFT");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[1].getPosition(),
-                                                       quadruped_model::LimbEnum::RF_LEG,joint_positions_rf, joint_positions_rf,"IN_LEFT");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[2].getPosition(),
-                                                       quadruped_model::LimbEnum::RH_LEG,joint_positions_rh, joint_positions_rh,"IN_LEFT");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[3].getPosition(),
-                                                       quadruped_model::LimbEnum::LH_LEG,joint_positions_lh, joint_positions_lh,"OUT_LEFT");
-            }else if (configure_now_ == "anti_x_configure") {
-                ROS_INFO_STREAM_ONCE("now is the anti x configure");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[0].getPosition(),
-                                                       quadruped_model::LimbEnum::LF_LEG,joint_positions_lf, joint_positions_lf,"OUT_LEFT");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[1].getPosition(),
-                                                       quadruped_model::LimbEnum::RF_LEG,joint_positions_rf, joint_positions_rf,"IN_LEFT");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[2].getPosition(),
-                                                       quadruped_model::LimbEnum::RH_LEG,joint_positions_rh, joint_positions_rh,"OUT_LEFT");
-                robot_kinetics_.InverseKinematicsSolve(foot_pose_to_base_in_base_frame[3].getPosition(),
-                                                       quadruped_model::LimbEnum::LH_LEG,joint_positions_lh, joint_positions_lh,"IN_LEFT");
-            }
-        }
-        joint_command.position[0] = joint_positions_lf(0);
-        joint_command.position[1] = joint_positions_lf(1);
-        joint_command.position[2] = joint_positions_lf(2);
-        joint_command.position[3] = joint_positions_rf(0);
-        joint_command.position[4] = joint_positions_rf(1);
-        joint_command.position[5] = joint_positions_rf(2);
-        joint_command.position[6] = joint_positions_rh(0);
-        joint_command.position[7] = joint_positions_rh(1);
-        joint_command.position[8] = joint_positions_rh(2);
-        joint_command.position[9] = joint_positions_lh(0);
-        joint_command.position[10] = joint_positions_lh(1);
-        joint_command.position[11] = joint_positions_lh(2);
-//        ROS_INFO_STREAM("the joint command in time dt is " << dt_ << joint_command.position[2]);
-        dt_ = dt_ + 0.001;
-
-    }else {
-//        ROS_INFO_STREAM("in the default loop");
-//            ROS_INFO_STREAM("The Joint angle is ");
         for (unsigned int i = 0; i < 12; i++) {
-            joint_command.position[i] = joint_init.position.at(i);
-//            std::cout << joint_command.position[i] << " ";
+            joint_command.position[i] = joint_angle.at(iteration).at(i);
+             }
+        iteration = iteration + 1;
+        std::cout << "iteration is " << iteration << std::endl;
+    }else {
+        for (unsigned int i = 0; i < 12; i++) {
+            joint_command.position[i] = joint_angle.back().at(i);
         }
-//        std::cout << std::endl;
+        std::cout << "Now come to the final joint" << std::endl;
     }
 
-//    ROS_INFO_STREAM("In time " << dt_ << " joint_command is " << joint_command.position[2]);
     free_gait::JointPositionsLeg LF_leg_joints, RF_leg_joints, RH_leg_joints, LH_leg_joints;
     LF_leg_joints(0) = joint_command.position[0];
     LF_leg_joints(1) = joint_command.position[1];
@@ -406,25 +255,10 @@ void walk_forward_controller::update(const ros::Time &time, const ros::Duration 
     robot_state_->setJointPositionsForLimb(free_gait::LimbEnum::RH_LEG, RH_leg_joints);
     robot_state_->setJointPositionsForLimb(free_gait::LimbEnum::LH_LEG, LH_leg_joints);
 
-//    std::cout << "error here?" <<std::endl;
-    if(iteration < joint_angle.size())
-    {
-        for (unsigned int i = 0; i < 12; i++) {
-            joint_command.position[i] = joint_angle.at(iteration).at(i);
-             }
-        iteration = iteration + 1;
-        std::cout << "iteration is " << iteration << std::endl;
-    }
-
-//    std::cout << "error is here!" << std::endl;
-
-//    ROS_INFO_STREAM("Joint command is ");
     for (unsigned int joint_num = 0; joint_num < 12; joint_num++) {
         joints_[joint_num].setCommand(joint_command.position[joint_num]);
         all_joint_positions_(joint_num) = joint_command.position[joint_num];
-//        std::cout << joint_command.position[joint_num] << " ";
     }
-//    std::cout << std::endl;
 
     robot_state_->setCurrentLimbJoints(all_joint_positions_);
 
