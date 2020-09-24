@@ -68,6 +68,7 @@
   <exec_depend>ct_optcon</exec_depend>
   <test_depend>rosunit</test_depend>
   <build_depend>rostest</build_depend>
+  <depend>curves</depend>
   <!--<build_depend>cppad</build_depend>
   <exec_depend>cppad</exec_depend>
   <build_depend>cppadcg</build_depend>

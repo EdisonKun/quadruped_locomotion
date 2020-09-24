@@ -6,55 +6,82 @@
  *  Author: Shunyao Wang
  *  Institute: Harbin Institute of Technology, Shenzhen
  */
-#include <ros/ros.h>
+
 #include "quadruped_model/quadrupedkinematics.h"
-//#include "geometry_msgs/Twist.h"
-//#include "gazebo_msgs/ModelStates.h"
-#include "rbdl/Model.h"
-#include "rbdl/addons/urdfreader/urdfreader.h"
+#include "quadruped_model/QuadrupedModel.hpp"
+
+#include "sensor_msgs/JointState.h"
+#include "ros/ros.h"
+
+#include "iostream"
+#include "fstream"
+#include "sstream"
 
 using namespace std;
 using namespace quadruped_model;
-
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "kinematicsTest");
-  ros::NodeHandle nh;
-  Eigen::MatrixXd jacobian;
-  QuadrupedKinematics QK;
-//  QK.LoadRobotDescriptionFromFile("/home/hitstar/catkin_ws/src/quadruped_locomotion-dev/quadruped_model/urdf/simpledog.urdf");
-  JointPositionsLimb joints(0, 0, 0);
-  Pose result;
-  HipPoseInBase test_enum;
-  test_enum[LimbEnum::RF_LEG] = Pose(Position(0,0,0), RotationQuaternion());
-  if(QK.FowardKinematicsSolve(joints, LimbEnum::RF_LEG, result))
-  {
-    EulerAnglesZyx eular_zyx(result.getRotation());
-    cout<<"Kinematics solve result:"<<endl<<result.getPosition()<<endl<<
-          "Rotation: "<<endl<<"Roll: "<<eular_zyx.roll()<<endl<<"Pitch: "<<
-          eular_zyx.pitch()<<endl<<"Yaw: "<<eular_zyx.yaw()<<endl;
-  }
-  if(QK.InverseKinematicsSolve(result.getPosition(),LimbEnum::RF_LEG,joints,joints))
-  {
-    cout<<"Inverse Kinematics solve results: "<<endl<<"joint1 = "<<joints(0)<<endl
-       <<"joint2 = "<<joints(1)<<endl<<"joint3 = "<<joints(2)<<endl;
-  }
+    ros::init(argc, argv, "send_joint_angle");
+    ros::NodeHandle nh;
+    ros::Publisher joint_pub = nh.advertise<sensor_msgs::JointState>("/joint_states", 1000);
+    ros::Rate loop_rate(400);
+    sensor_msgs::JointState joint_state;
 
-  QK.AnalysticJacobian(joints, LimbEnum::RF_LEG, jacobian);
-  cout<<"jacobian : "<<endl<<jacobian<<endl;
+    joint_state.header.frame_id = "base_link";
+    joint_state.name.resize(12);
+    joint_state.position.resize(12);
+    joint_state.name[0] = "front_left_1_joint";
+    joint_state.name[1] = "front_left_2_joint";
+    joint_state.name[2] = "front_left_3_joint";
+    joint_state.name[3] = "front_right_1_joint";
+    joint_state.name[4] = "front_right_2_joint";
+    joint_state.name[5] = "front_right_3_joint";
+    joint_state.name[6] = "rear_right_1_joint";
+    joint_state.name[7] = "rear_right_2_joint";
+    joint_state.name[8] = "rear_right_3_joint";
+    joint_state.name[9] = "rear_left_1_joint";
+    joint_state.name[10] = "rear_left_2_joint";
+    joint_state.name[11] = "rear_left_3_joint";
 
-  JointPositionsLimb joint_G(0,-1.50,0);
-  Force gravity_in_base(0,0,-9.8);
-  JointTorquesLimb gravity_compensation_torque = QK.getGravityCompensationForLimb(LimbEnum::LF_LEG, joint_G, gravity_in_base);
-  cout<<"gravity_compensation_torque :"<<endl<<gravity_compensation_torque<<endl;
+    std::ifstream readfile;
+    readfile.open("/home/kun/catkin_ws_dependency/catch_a_ball_read.txt");
+    quadruped_model::JointPositions joint_position_file;
+    std::vector<quadruped_model::JointPositions> joint_position_collection;
+    double time;
+    for(int i = 0; !readfile.eof(); i++)
+    {
+        readfile >> time >> joint_position_file(0) >> joint_position_file(1)>> joint_position_file(2)
+            >> joint_position_file(3)>> joint_position_file(4)
+            >> joint_position_file(5)>> joint_position_file(6)
+            >> joint_position_file(7)>> joint_position_file(8)
+            >> joint_position_file(9)>> joint_position_file(10)
+            >> joint_position_file(11) >> time >> time >> time >> time >> time >> time >> time >> time >> time >>time >> time >> time;
+        joint_position_collection.push_back(joint_position_file);
+    }
+    readfile.close();
+    joint_position_collection.pop_back();
+    ROS_WARN_STREAM(joint_position_collection.size());
+    unsigned long i = 0;
+    std::cout << "right here" << std::endl;
+    std::cout << joint_position_collection.size() << std::endl;
 
-  RigidBodyDynamics::Model* rbdl_model = new RigidBodyDynamics::Model();
-//  char* urdf_dir = (char*)"/home/hitstar/catkin_ws/src/quadruped_locomotion-dev/quadruped_model/urdf/simpledog_m.urdf";
-//  RigidBodyDynamics::Addons::URDFReadFromFile(urdf_dir,
-//                                              rbdl_model,
-//                                              true,
-//                                              true);
+    while(ros::ok())
+    {
 
 
-  ROS_INFO("Hello world!");
+        if(i < joint_position_collection.size())
+        {
+            for (unsigned int j = 0; j < 12; j++) {
+                joint_state.position[j] = joint_position_collection[i](j);
+            }
+            joint_pub.publish(joint_state);
+
+        }
+        i = i + 1;
+        ros::spinOnce();
+        loop_rate.sleep();
+    }
+
+    return 1;
 }
+

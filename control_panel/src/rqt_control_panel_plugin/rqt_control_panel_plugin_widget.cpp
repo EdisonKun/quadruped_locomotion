@@ -179,6 +179,12 @@ void rqt_control_panel_plugin_widget::on_Controllers_currentChanged(int index)
             break;
         }
 
+        if(controller.name == "walk_forward_controller" && controller.state =="running")
+        {
+            current_controller = "walk_forward_controller";
+            break;
+        }
+
 
     }
   controller_manager_msgs::SwitchController controller_switch;

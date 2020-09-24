@@ -18,7 +18,7 @@ walk_forward_controller::walk_forward_controller()
     robot_state_.reset(new free_gait::State);
     robot_state_->initialize(limbs_, branches_);
     log_length_ = 100000;
-    knot_num_ = 10;
+    knot_num_ = 2;
     times_.resize(knot_num_);
     values_lf_.resize(knot_num_);
     values_rf_.resize(knot_num_);
@@ -50,8 +50,6 @@ walk_forward_controller::walk_forward_controller()
     dt_ = 0.0;
     configure_time_start_flag_ = false;
     foot_pose_to_base_in_base_frame.resize(4);
-    configure_last_ = "x_configure";
-    configure_now_ = "x_configure";
     joint_init.name.resize(12);
     joint_init.effort.resize(12);
     joint_init.position.resize(12);
@@ -62,7 +60,7 @@ walk_forward_controller::walk_forward_controller()
 
     static rosbag::Bag bag;
     static std::string topics("/log/joint_state");
-    bag.open("/home/kun/rosbags/2020-07-16-15-12-46.bag", rosbag::bagmode::Read);
+    bag.open("/home/hitstar/rosbags/2020-07-16-15-12-46.bag", rosbag::bagmode::Read);
     static rosbag::View view(bag, rosbag::TopicQuery(topics));
     static rosbag::View::iterator it = view.begin();
 
@@ -81,6 +79,9 @@ walk_forward_controller::walk_forward_controller()
     std::cout << "the data length is " << joint_angle.size();
 
     iteration = 0;
+    restore_to_initial_flag_ = false;
+    joint_trajectory_.resize(12);
+    first_planning_ = false;
 }//walk_forward_controller
 
 walk_forward_controller::~walk_forward_controller()
@@ -147,7 +148,8 @@ bool walk_forward_controller::init(hardware_interface::RobotStateInterface *hard
     }
 
     base_command_sub_ = nodehandle.subscribe("/desired_robot_state", 1, &walk_forward_controller::baseCommandCallback, this);
-
+    restore_to_initial_topic_sub_ = nodehandle.subscribe("/restore_to_initial_topic_sub_", 1,
+                                                         &walk_forward_controller::restore_to_initial_funnction_callback, this);
     ROS_INFO("walk forward Controller initialized");
 
     log_data_srv_  = nodehandle.advertiseService("/capture_log_data_walk", &walk_forward_controller::logDataCapture, this);
@@ -157,16 +159,12 @@ bool walk_forward_controller::init(hardware_interface::RobotStateInterface *hard
     desired_robot_state_pub_ = nodehandle.advertise<free_gait_msgs::RobotState>("/log/desired_robot_state_walk", log_length_);
     actual_robot_state_pub_ = nodehandle.advertise<free_gait_msgs::RobotState>("/log/actual_robot_state_walk", log_length_);
     joint_command_pub_ = nodehandle.advertise<sensor_msgs::JointState>("/log/joint_command_walk",log_length_);
-    x_configure_sub_ = nodehandle.subscribe("/x_configure_change", 1, &walk_forward_controller::change_to_x_configure_CB, this);
-    left_configure_sub_ = nodehandle.subscribe("/left_configure_change", 1, &walk_forward_controller::change_to_left_configure_CB, this);
-    right_configure_sub_ = nodehandle.subscribe("/right_configure_change", 1, &walk_forward_controller::change_to_right_configure_CB, this);
-    anti_x_configure_sub_ = nodehandle.subscribe("/anti_x_configure_change", 1, &walk_forward_controller::change_to_anti_x_configure_CB, this);
     return true;
 }
 
 void walk_forward_controller::update(const ros::Time &time, const ros::Duration &period)
 {
-    ROS_INFO_STREAM("Controller update once");
+    //    ROS_INFO_STREAM("Controller update once");
     sensor_msgs::JointState joint_command, joint_actual;
     joint_command.effort.resize(12);
     joint_command.position.resize(12);
@@ -174,7 +172,7 @@ void walk_forward_controller::update(const ros::Time &time, const ros::Duration 
     joint_actual.name.resize(12);
     joint_actual.position.resize(12);
     joint_actual.velocity.resize(12);
-    joint_actual.effort.resize(12);    
+    joint_actual.effort.resize(12);
 
     std::vector<bool> leg_state;
     std_msgs::Float64MultiArray leg_phase;
@@ -194,9 +192,8 @@ void walk_forward_controller::update(const ros::Time &time, const ros::Duration 
             joint_init.position[i] = joint_actual.position[i];
             jointpositions(i) = joint_actual.position[i];
         }
-        std::cout << std::endl;
-       init_joint_flag = false;
-       robot_state_->setAllJointPositions(jointpositions);//current
+        init_joint_flag = false;
+        robot_state_->setAllJointPositions(jointpositions);//current
     }
     robot_state_->setPositionWorldToBaseInWorldFrame(base_desired_position_);//target? is target!
     robot_state_->setOrientationBaseToWorld(base_desired_rotation_);
@@ -223,14 +220,42 @@ void walk_forward_controller::update(const ros::Time &time, const ros::Duration 
     {
         for (unsigned int i = 0; i < 12; i++) {
             joint_command.position[i] = joint_angle.at(iteration).at(i);
-             }
+        }
         iteration = iteration + 1;
-        std::cout << "iteration is " << iteration << std::endl;
+        //        std::cout << "iteration is " << iteration << std::endl;
     }else {
+        //keep the last joint
         for (unsigned int i = 0; i < 12; i++) {
             joint_command.position[i] = joint_angle.back().at(i);
         }
-        std::cout << "Now come to the final joint" << std::endl;
+
+        if(restore_to_initial_flag_ == true)//planning to 0 0 0
+        {
+            if(first_planning_ == 1)
+            {
+                change_to_initial_configure();//finish the planning
+                first_planning_ = false;
+            }
+
+            if(dt_ <= 5 )//whether is beyond the maximum planning time;
+            {
+                for(unsigned int i = 0; i < 12; i++)
+                {
+                    joint_trajectory_[i].evaluate(joint_command.position[i],dt_);
+                }
+                dt_ = dt_ + 0.0025;
+                std::cout << "dt_ is " << dt_ << std::endl;
+            }
+            else
+            {
+                for(unsigned int i = 0; i < 12; i++)
+                {
+                    joint_command.position[i] = 0;
+                }
+            }
+
+        }
+        //        std::cout << "Now come to the final joint" << std::endl;
     }
 
     free_gait::JointPositionsLeg LF_leg_joints, RF_leg_joints, RH_leg_joints, LH_leg_joints;
@@ -255,10 +280,13 @@ void walk_forward_controller::update(const ros::Time &time, const ros::Duration 
     robot_state_->setJointPositionsForLimb(free_gait::LimbEnum::RH_LEG, RH_leg_joints);
     robot_state_->setJointPositionsForLimb(free_gait::LimbEnum::LH_LEG, LH_leg_joints);
 
+    //    std::cout << "joint command is " << std::endl;
     for (unsigned int joint_num = 0; joint_num < 12; joint_num++) {
+        //        std::cout << joint_command.position[joint_num];
         joints_[joint_num].setCommand(joint_command.position[joint_num]);
         all_joint_positions_(joint_num) = joint_command.position[joint_num];
     }
+    //    std::cout << std::endl;
 
     robot_state_->setCurrentLimbJoints(all_joint_positions_);
 
@@ -665,6 +693,11 @@ void walk_forward_controller::baseCommandCallback(const free_gait_msgs::RobotSta
     };
 }
 
+void walk_forward_controller::restore_to_initial_funnction_callback(const std_msgs::BoolConstPtr& set_flag_to_true)
+{
+    restore_to_initial_flag_ = true;
+    first_planning_ = true;
+}
 void walk_forward_controller::starting(const ros::Time &time)
 {
     ROS_INFO("staring walking forward controller");
@@ -686,16 +719,16 @@ void walk_forward_controller::stopping(const ros::Time &time)
     std::cout << "the length of data is " << actual_robot_state_.size() << std::endl;
     ROS_INFO("stop configure change controller");
     joint_angle.clear();
-//    configure_time_start_flag_ = false;
+    //    configure_time_start_flag_ = false;
 }
 bool walk_forward_controller::logDataCapture(std_srvs::Empty::Request& req,
-                                                 std_srvs::Empty::Response& res)
+                                             std_srvs::Empty::Response& res)
 {
     ROS_INFO("Call to Capture Log Data");
     for(int index = 0; index<desired_robot_state_.size(); index++)
     {
         //        leg_state_pub_.publish(leg_states_[index]);
-                joint_command_pub_.publish(joint_command_[index]);
+        joint_command_pub_.publish(joint_command_[index]);
         //        joint_actual_pub_.publish(joint_actual_[index]);
         contact_desired_pub_.publish(foot_desired_contact_[index]);
         leg_phase_pub_.publish(leg_phases_[index]);
@@ -707,140 +740,55 @@ bool walk_forward_controller::logDataCapture(std_srvs::Empty::Request& req,
     return true;
 }
 
-
-
-void walk_forward_controller::planning_curves_CB(const std_msgs::BoolConstPtr& planning_curves)
+void walk_forward_controller::change_to_initial_configure()
 {
-    ROS_INFO_STREAM("planning curves");
-    dt_ = 0;
-    trajectory_lf_.clear();
-    trajectory_rf_.clear();
-    trajectory_rh_.clear();
-    trajectory_lh_.clear();
+    ROS_INFO_STREAM("change to initial configure");
     free_gait::JointPositions all_joint_positions;
+    std::vector<std::vector<double> > joint_angle_in_planning;
+    joint_angle_in_planning.resize(12);
     for (unsigned int i = 0; i < 12; i++) {
+        joint_angle_in_planning[i].resize(2);
         all_joint_positions(i) = robot_state_handle_.getJointPositionRead()[i];//current joint angle;
+        joint_angle_in_planning.at(i)[0] = all_joint_positions(i);
+        joint_angle_in_planning.at(i)[1] = 0;
     }
-    ROS_INFO_STREAM("all_joint_position is " << all_joint_positions(0) << all_joint_positions(1) << all_joint_positions(2));
-
-    quadruped_model::JointPositionsLimb joints_position_lf, joints_position_rf, joints_position_rh, joints_position_lh;
-    joints_position_lf = quadruped_model::JointPositionsLimb(all_joint_positions(0),all_joint_positions(1),all_joint_positions(2));
-    robot_kinetics_.FowardKinematicsSolve(joints_position_lf,quadruped_model::LimbEnum::LF_LEG,foot_pose_to_base_in_base_frame[0]);
-
-    for (unsigned int i = 0; i < knot_num_; i++) {
-        times_[i] = i * 0.6;//5.4
+    times_.at(0) = 0;
+    times_.at(1) = 5;
+    for(unsigned int i = 0; i < 12; i++)
+    {
+        joint_trajectory_.at(i).fitCurve(times_, joint_angle_in_planning.at(i));
     }
-
-    //current z-direction height;
-    values_lf_[0] = foot_pose_to_base_in_base_frame[0].getPosition().z();
-    ROS_INFO_STREAM("foot_pose_to_base_in_base_frame[0] << " << foot_pose_to_base_in_base_frame[0].getPosition());
-//    ROS_INFO_STREAM("values_lf_[0] is << " << values_lf_[0]);
-
-    double motion_step = (-0.6255 - values_lf_[0]) / (knot_num_ / 2);//negative
-    for (unsigned int i = 1; i <= knot_num_; i++) {
-        if(i <= (knot_num_/2)){
-            values_lf_[i] = values_lf_[i - 1] + motion_step;
-        }else {
-            values_lf_[i] = values_lf_[i - 1] + 0.04;
-        }
-    }
-    trajectory_lf_.fitCurve(times_,values_lf_);
-
-    joints_position_rf = quadruped_model::JointPositionsLimb(all_joint_positions(3),all_joint_positions(4),all_joint_positions(5));
-//    ROS_INFO_STREAM("joints_position_ is << " << all_joint_positions(3)<< all_joint_positions(4) << all_joint_positions(5));
-    robot_kinetics_.FowardKinematicsSolve(joints_position_rf,quadruped_model::LimbEnum::RF_LEG,foot_pose_to_base_in_base_frame[1]);
-
-    values_rf_[0] = foot_pose_to_base_in_base_frame[1].getPosition().z();
-//    ROS_INFO_STREAM("foot_pose_to_base_in_base_frame[1] << " << foot_pose_to_base_in_base_frame[1].getPosition());
-//    ROS_INFO_STREAM("values_rf_[0] is << " << values_rf_[0]);
-
-    motion_step = (-0.6255 - values_rf_[0]) / (knot_num_ / 2);
-    for (unsigned int i = 1; i <= knot_num_; i++) {
-        if(i <= (knot_num_/2)){
-            values_rf_[i] = values_rf_[i - 1] + motion_step;
-        }else {
-            values_rf_[i] = values_rf_[i - 1] + 0.04;
-        }
-    }
-    trajectory_rf_.fitCurve(times_,values_rf_);
-
-    joints_position_rh = quadruped_model::JointPositionsLimb(all_joint_positions(6),all_joint_positions(7),all_joint_positions(8));
-    robot_kinetics_.FowardKinematicsSolve(joints_position_rh,quadruped_model::LimbEnum::RH_LEG,foot_pose_to_base_in_base_frame[2]);
-    values_rh_[0] = foot_pose_to_base_in_base_frame[2].getPosition().z();
-//    ROS_INFO_STREAM("foot_pose_to_base_in_base_frame[2] << " << foot_pose_to_base_in_base_frame[2].getPosition());
-//    ROS_INFO_STREAM("values_rf_[0] is << " << values_rh_[0]);
-
-    motion_step = (-0.6255 - values_rh_[0]) / (knot_num_ / 2);
-    for (unsigned int i = 1; i <= knot_num_; i++) {
-        if(i <= (knot_num_ / 2)){
-            values_rh_[i] = values_rh_[i - 1] + motion_step;
-        }else {
-            values_rh_[i] = values_rh_[i - 1] + 0.04;
-        }
-    }
-    trajectory_rh_.fitCurve(times_,values_rh_);
-
-    joints_position_lh = quadruped_model::JointPositionsLimb(all_joint_positions(9),all_joint_positions(10),all_joint_positions(11));
-    robot_kinetics_.FowardKinematicsSolve(joints_position_lh,quadruped_model::LimbEnum::LH_LEG,foot_pose_to_base_in_base_frame[3]);
-
-    values_lh_[0] = foot_pose_to_base_in_base_frame[3].getPosition().z();
-//    ROS_INFO_STREAM("z_posi_in_base of lh is " << values_lh_[0]);
-
-    motion_step = (-0.6255 - values_lh_[0]) / (knot_num_ / 2);
-    for (unsigned int i = 1; i <= knot_num_; i++) {
-        if(i <= (knot_num_/2)){
-            values_lh_[i] = values_lh_[i - 1] + motion_step;
-        }else {
-            values_lh_[i] = values_lh_[i - 1] + 0.04;
-        }
-    }
-    trajectory_lh_.fitCurve(times_,values_lh_);
-    configure_time_start_flag_ = true;
-    ROS_INFO_STREAM("finish planning");
-}
-void walk_forward_controller::change_to_x_configure_CB(const std_msgs::BoolConstPtr& X_Configure)
-{
-    ROS_INFO_STREAM("in the x configure");
-    configure_last_ = configure_now_;
-    configure_now_ = "x_configure";
-    std_msgs::BoolConstPtr test;
-    planning_curves_CB(test);
-    ROS_INFO_STREAM("in the x configure_end");
+    ROS_INFO_STREAM("finish the planning");
 }
 
-void walk_forward_controller::change_to_left_configure_CB(const std_msgs::BoolConstPtr &left_Configure)
-{
-    ROS_INFO_STREAM("in the left configure");
-    configure_last_ = configure_now_;
-    configure_now_ = "left_configure";
-    std_msgs::BoolConstPtr test;
-    planning_curves_CB(test);
-    ROS_INFO_STREAM("in the left configure_end");
-}
 
-void walk_forward_controller::change_to_right_configure_CB(const std_msgs::BoolConstPtr &right_Configure)
-{
-    ROS_INFO_STREAM("in the right configure");
-    configure_last_ = configure_now_;
-    configure_now_ = "right_configure";
-    std_msgs::BoolConstPtr test;
-    planning_curves_CB(test);
-    ROS_INFO_STREAM("in the right configure_end");
-}
-
-void walk_forward_controller::change_to_anti_x_configure_CB(const std_msgs::BoolConstPtr &anti_x_Configure)
-{
-    ROS_INFO_STREAM("in the anti x configure");
-    configure_last_ = configure_now_;
-    configure_now_ = "anti_x_configure";
-    std_msgs::BoolConstPtr test;
-    planning_curves_CB(test);
-    ROS_INFO_STREAM("in the anti x configure_end");
-}
 
 void walk_forward_controller::walking_forward()
 {
     ROS_INFO_STREAM("Need to implentation");
+}
+
+void walk_forward_controller::initial_to_stand()
+{
+    double pos_x = 0.382653;
+    double pos_y = -0.305;
+    double pos_z = -0.228263;
+
+    times_.resize(5);
+    for (unsigned int i = 0; i < 5; i++) {
+        times_[i] = i * 0.5;
+    }
+
+    values_lf_.resize(5);
+    values_rf_.resize(5);
+    values_rh_.resize(5);
+    values_lh_.resize(5);
+    
+    values_lf_[0] = pos_z;
+    values_lf_[1] = -0.25;
+    values_lf_[2] = -0.35;
+    values_lf_[3] = -0.30;
+    ROS_INFO("what");
 }
 
 

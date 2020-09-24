@@ -59,11 +59,7 @@ public:
 private:
     enum leg_configuration_{x_configuration,left_configuration}leg_configuration_;
     void baseCommandCallback(const free_gait_msgs::RobotStateConstPtr& robot_state_msgs);
-    void change_to_x_configure_CB(const std_msgs::BoolConstPtr& X_Configure);
-    void change_to_left_configure_CB(const std_msgs::BoolConstPtr& left_Configure);
-    void change_to_right_configure_CB(const std_msgs::BoolConstPtr& right_Configure);
-    void change_to_anti_x_configure_CB(const std_msgs::BoolConstPtr& anti_x_Configure);
-    void planning_curves_CB(const std_msgs::BoolConstPtr& planning_curves);
+    void change_to_initial_configure();
     void walking_forward();
     std::vector<std::string> joint_names_;
     std::vector<hardware_interface::JointHandle> joints_;
@@ -110,12 +106,7 @@ private:
     free_gait::JointPositions all_joint_positions_;
     sensor_msgs::JointState joint_init;
 
-    curves::PolynomialSplineScalarCurve<curves::PolynomialSplineContainerQuintic> trajectory_lf_, trajectory_rf_,trajectory_rh_,trajectory_lh_;
-    std::vector<curves::ScalarCurveConfig::ValueType> values_lf_, values_rf_, values_rh_, values_lh_;
-    curves::ScalarCurveConfig::ValueType values_joint_1, values_joint_2, values_joint_3, values_joint_4;
-    //    curves::PolynomialSplineQuinticScalarCurve::ValueType
-    //        ScalarCurveConfig::ValueType
-    std::vector<Time> times_;
+
 
     bool logDataCapture(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
     bool init_joint_flag;
@@ -124,16 +115,28 @@ private:
     quadruped_model::QuadrupedKinematics robot_kinetics_;
     std::vector<Pose> foot_pose_to_base_in_base_frame;
     int knot_num_;
-    std::string configure_last_;
-    std::string configure_now_;
 
     /*****from here*******/
     int iteration;
     std::vector<std::vector<double> > joint_angle;
 
 
-    //    quadruped_model::JointPositionsLimb joints_position_;
-    //    std::vector<bool> leg_states_;
+    /******set a flag [restore_to_initial_flag_] to restore the initial 0 0 0 position*****/
+    /****subscribe a topic [restore_to_initial_topic_sub_] to set the flag ****/
+    bool restore_to_initial_flag_;
+    ros::Subscriber restore_to_initial_topic_sub_;
+    void restore_to_initial_funnction_callback(const std_msgs::BoolConstPtr& set_flag_to_true);
+    bool first_planning_;
+
+    /****** planning curve ******/
+    std::vector<curves::PolynomialSplineScalarCurve<curves::PolynomialSplineContainerQuintic>> joint_trajectory_;
+    std::vector<curves::ScalarCurveConfig::ValueType> values_lf_, values_rf_, values_rh_, values_lh_;
+    std::vector<Time> times_;
+
+
+    /****** initial state to stand state ********/
+    void initial_to_stand();
+
 };
 
 }//namespace

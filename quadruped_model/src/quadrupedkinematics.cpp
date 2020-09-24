@@ -589,6 +589,7 @@ bool QuadrupedKinematics::InverseKinematicsSolve(const Position& foot_position, 
 //      <<"py in base = "<<foot_position(1)<<endl
 //      <<"pz in base = "<<foot_position(2)<<endl;
   Position foot_position_in_hip = getPositionFootToHipInHipFrame(limb, foot_position);
+//  std::cout << "limb type is "<< foot_position_in_hip <<std::endl;
   px=foot_position_in_hip(0);
   py=foot_position_in_hip(1);
   pz=foot_position_in_hip(2);
