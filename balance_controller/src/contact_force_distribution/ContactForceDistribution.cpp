@@ -109,7 +109,6 @@ bool ContactForceDistribution::computeForceDistribution(
   {
       //! WSHY: calculate A, b, S, W
     prepareOptimization(virtualForceInBaseFrame, virtualTorqueInBaseFrame);
-
     // TODO Move these function calls to a separate method which can be overwritten
     // to have different contact force distributions, or let them be activated via parameters.
     addMinimalForceConstraints();
@@ -129,7 +128,6 @@ bool ContactForceDistribution::computeForceDistribution(
     isForceDistributionComputed_ = true;
     computeJointTorques();
   }
-
   if (isLogging_) updateLoggerData();
   return isForceDistributionComputed_;
 }
@@ -175,11 +173,11 @@ bool ContactForceDistribution::prepareOptimization(
    */
   b_.resize(nElementsVirtualForceTorqueVector_);//! WSHY: b is 6X1
   b_.segment(0, virtualForce.toImplementation().size()) = virtualForce.toImplementation();
-  b_.segment(virtualForce.toImplementation().size(), virtualTorque.toImplementation().size()) = virtualTorque.toImplementation();
+  b_.segment(virtualForce.toImplementation().size(), virtualTorque.toImplementation().size()) = virtualTorque.toImplementation();//!KUN initial b_
 
-  S_ = virtualForceWeights_.asDiagonal();
+  S_ = virtualForceWeights_.asDiagonal();//diagonal
 
-  A_.resize(nElementsVirtualForceTorqueVector_, n_);
+  A_.resize(nElementsVirtualForceTorqueVector_, n_);//6*n
   A_.setZero();
   //! WSHY: set the upper 3 rows as identity
   A_.middleRows(0, footDof_) = (Matrix3d::Identity().replicate(1, nLegsInForceDistribution_)).sparseView();
@@ -233,11 +231,14 @@ bool ContactForceDistribution::addMinimalForceConstraints()
   D_.middleRows(0, D_temp.rows()) = D_temp;
   d_.conservativeResize(rowIndex + nLegsInForceDistribution_);//n X 1
   f_.conservativeResize(rowIndex + nLegsInForceDistribution_);
+//  std::cout << "rowindex + nLegsInForceDistribution_"<< rowIndex + nLegsInForceDistribution_ << std::endl;
 
   const RotationQuaternion& orientationWorldToBase = robot_state_->getOrientationBaseToWorld().inverted();//torso_->getMeasuredState().getOrientationWorldToBase();
 
+//  std::cout << "orientationworldtobase is " << orientationWorldToBase << std::endl;
   for (auto& legInfo : legInfos_)
   {
+//      std::cout <<"part force distribution" <<legInfo.second.isPartOfForceDistribution_ << std::endl;
     if (legInfo.second.isPartOfForceDistribution_)
     {
       //Position positionWorldToFootInWorldFrame = robot_state_->getPositionWorldToFootInWorldFrame(legInfo.first);//legInfo.first->getPositionWorldToFootInWorldFrame();
@@ -246,9 +247,11 @@ bool ContactForceDistribution::addMinimalForceConstraints()
       * TODO(Shunyao) : update suface normal
       ****************/
       Vector footContactNormalInWorldFrame = robot_state_->getSurfaceNormal(legInfo.first);//(0,0,1) normally
+//      std::cout << "surface normal is " << footContactNormalInWorldFrame << std::endl;
 //      footContactNormalInWorldFrame = Vector(0,0,1);
 //      terrain_->getNormal(positionWorldToFootInWorldFrame, footContactNormalInWorldFrame);
       Vector footContactNormalInBaseFrame = orientationWorldToBase.rotate(footContactNormalInWorldFrame);
+//      std::cout << "foot contact normal is " << footContactNormalInBaseFrame << std::endl;
 //      footContactNormalInBaseFrame = Vector(0,0,1);
       //! WSHY: surface norm is the norm vector of force,
       //! dot product to calcaulate the norm of Force
@@ -261,6 +264,7 @@ bool ContactForceDistribution::addMinimalForceConstraints()
       rowIndex++;
     }
   }
+//  std::cout << "finish the minimal force constraints" << std::endl;
 
   return true;
 }
@@ -509,6 +513,9 @@ bool ContactForceDistribution::solveOptimization()
           ROS_ERROR("Contact Force is Minus !!!!!!!!!!!!!!!!!!!!");
           return false;
         }
+        getparameters();
+
+
 //    }else{
 //      if (!ooqpei::QuadraticProblemFormulation::solve(A_, S_, b_, W_, H_, C_, c_, D_, d_, f_, x_pre_, x_))
 //        {
@@ -535,6 +542,14 @@ bool ContactForceDistribution::solveOptimization()
   }
 
   return true;
+}
+
+void ContactForceDistribution::getparameters() const
+{
+//    std::cout << "A_ is ............... " << std::endl << A_ << std::endl;
+//    std::cout << "b_ is " << std::endl << b_ << std::endl;
+//    std::cout << "s_ is " << std::endl << S_.diagonal() << std::endl;
+//    std::cout << "w_ is " << std::endl << W_.diagonal() << std::endl;
 }
 
 bool ContactForceDistribution::computeJointTorques()

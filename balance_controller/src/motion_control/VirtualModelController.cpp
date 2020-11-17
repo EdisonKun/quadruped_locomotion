@@ -65,7 +65,6 @@ VirtualModelController::VirtualModelController(const ros::NodeHandle& node_handl
   dynamicReconfigureServer_.reset(new DynamicConfigServer(node_handle));
   reconfigureCallbackType_ = boost::bind(&VirtualModelController::dynamicReconfigureCallback, this, _1, _2);
   dynamicReconfigureServer_->setCallback(reconfigureCallbackType_);
-
 }
 
 VirtualModelController::~VirtualModelController()
@@ -132,6 +131,7 @@ bool VirtualModelController::compute()
   computeVirtualTorque();
 //  cout << *this << endl;
   if (!contactForceDistribution_->computeForceDistribution(virtualForceInBaseFrame_, virtualTorqueInBaseFrame_)) {
+
     return false;
   }
   return true;
@@ -202,8 +202,8 @@ bool VirtualModelController::computeGravityCompensation()
   LinearAcceleration gravitationalAccelerationInBaseFrame = robot_state_->getOrientationBaseToWorld().inverseRotate(gravitationalAccelerationInWorldFrame);//torso_->getMeasuredState().getOrientationWorldToBase().rotate(gravitationalAccelerationInWorldFrame);
 
 //  gravitationalAccelerationInBaseFrame /= 1.1;
-
   const Force forceTorso = Force(-gravityCompensationForcePercentage_*robot_state_->getRobotMass() * gravitationalAccelerationInBaseFrame);
+
   gravityCompensationForceInBaseFrame_ = forceTorso;
   //! WSHY: F = mg, T = r_com X F
   gravityCompensationTorqueInBaseFrame_ = Torque(robot_state_->getCenterOfMassInBase().cross(forceTorso));//Torque(torso_->getProperties().getBaseToCenterOfMassPositionInBaseFrame().cross(forceTorso));

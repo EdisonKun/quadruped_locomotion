@@ -216,6 +216,14 @@ target_link_libraries(bodymovesplanning_v1_node
   ${RBDL_LIBRARY}
   ${RBDL_URDFReader_LIBRARY})
 
+add_executable(bodymovesplanning_v2_node src/bodymovesplanning_v2.cpp)
+
+target_link_libraries(bodymovesplanning_v2_node
+  ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+  ${RBDL_LIBRARY}
+  ${RBDL_URDFReader_LIBRARY})
+
 add_executable(withwheelmotion_node src/withwheelmotion.cpp)
 
 target_link_libraries(withwheelmotion_node

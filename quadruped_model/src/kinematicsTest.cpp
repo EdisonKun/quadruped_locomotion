@@ -1,9 +1,9 @@
 /*
  *  kinematicsTest.cpp
- *  Descriotion:
+ *  Descriotion:This file sends planned joint angles to the quadruped model in rviz;
  *
- *  Created on: date, 2019
- *  Author: Shunyao Wang
+ *  Created on: date, 2020
+ *  Author: EdisonKun
  *  Institute: Harbin Institute of Technology, Shenzhen
  */
 
@@ -24,7 +24,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "send_joint_angle");
     ros::NodeHandle nh;
     ros::Publisher joint_pub = nh.advertise<sensor_msgs::JointState>("/joint_states", 1000);
-    ros::Rate loop_rate(400);
+    ros::Rate loop_rate(1000);
     sensor_msgs::JointState joint_state;
 
     joint_state.header.frame_id = "base_link";
@@ -44,7 +44,7 @@ int main(int argc, char **argv)
     joint_state.name[11] = "rear_left_3_joint";
 
     std::ifstream readfile;
-    readfile.open("/home/kun/catkin_ws_dependency/catch_a_ball_read.txt");
+    readfile.open("/home/kun/catkin_ws_dependency/walking_in_plain_read.txt");
     quadruped_model::JointPositions joint_position_file;
     std::vector<quadruped_model::JointPositions> joint_position_collection;
     double time;
@@ -67,8 +67,6 @@ int main(int argc, char **argv)
 
     while(ros::ok())
     {
-
-
         if(i < joint_position_collection.size())
         {
             for (unsigned int j = 0; j < 12; j++) {
@@ -78,6 +76,10 @@ int main(int argc, char **argv)
 
         }
         i = i + 1;
+        if(i == joint_position_collection.size() - 1)
+        {
+            i = 0;
+        }
         ros::spinOnce();
         loop_rate.sleep();
     }

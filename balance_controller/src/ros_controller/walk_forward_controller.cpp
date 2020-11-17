@@ -58,25 +58,25 @@ walk_forward_controller::walk_forward_controller()
     std::vector<double> joint_temp;
     joint_temp.resize(12);
 
-    static rosbag::Bag bag;
-    static std::string topics("/log/joint_state");
-    bag.open("/home/hitstar/rosbags/2020-07-16-15-12-46.bag", rosbag::bagmode::Read);
-    static rosbag::View view(bag, rosbag::TopicQuery(topics));
-    static rosbag::View::iterator it = view.begin();
+//    static rosbag::Bag bag;
+//    static std::string topics("/log/joint_state");
+//    bag.open("/home/hitstar/rosbags/2020-07-16-15-12-46.bag", rosbag::bagmode::Read);
+//    static rosbag::View view(bag, rosbag::TopicQuery(topics));
+//    static rosbag::View::iterator it = view.begin();
 
-    for (it = view.begin(); it != view.end(); it++) {
-        auto m = *it;
-        sensor_msgs::JointState::ConstPtr s = m.instantiate<sensor_msgs::JointState>();
-        if(s != NULL)
-        {
-            for (unsigned int i = 0; i < 12 ; i++) {
-                joint_temp[i] = s->position.at(i);
-            }
-            joint_angle.push_back(joint_temp);
-        }
-    }
-    std::cout << "finish the data convert" << std::endl;
-    std::cout << "the data length is " << joint_angle.size();
+//    for (it = view.begin(); it != view.end(); it++) {
+//        auto m = *it;
+//        sensor_msgs::JointState::ConstPtr s = m.instantiate<sensor_msgs::JointState>();
+//        if(s != NULL)
+//        {
+//            for (unsigned int i = 0; i < 12 ; i++) {
+//                joint_temp[i] = s->position.at(i);
+//            }
+//            joint_angle.push_back(joint_temp);
+//        }
+//    }
+//    std::cout << "finish the data convert" << std::endl;
+//    std::cout << "the data length is " << joint_angle.size();
 
     iteration = 0;
     restore_to_initial_flag_ = false;

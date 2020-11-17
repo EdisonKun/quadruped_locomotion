@@ -39,4 +39,12 @@
   </class>
   </library>
 
+  <library path="lib/libstatic_walk_controller">
+  <class name="balance_controller/static_walk_controller"
+         type="balance_controller::static_walk_controller"
+         base_class_type="controller_interface::ControllerBase">
+    <description>walk forward of quadruped robot</description>
+  </class>
+  </library>
+
 </class_libraries>

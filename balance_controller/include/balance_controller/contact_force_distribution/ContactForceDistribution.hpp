@@ -140,6 +140,7 @@ class ContactForceDistribution : public ContactForceDistributionBase
    double getGroundForceWeight() const;
    double getMinimalNormalGroundForce() const;
    double getVirtualForceWeight(int index) const;
+   void getparameters() const;
 
    const Vector& getFirstDirectionOfFrictionPyramidInWorldFrame(free_gait::LimbEnum leg) const;
    const Vector& getSecondDirectionOfFrictionPyramidInWorldFrame(free_gait::LimbEnum leg) const;

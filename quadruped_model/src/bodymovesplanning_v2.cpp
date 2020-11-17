@@ -1,6 +1,10 @@
 /*
  *  bodymovespalnning.cpp
  *  Descriotion:planning the motion of legs; and the body also moves with the moves of legs; do not consider the configuration of legs;
+ * this paper is prepared for the ICRA2021, when the legs moves, it should consider the configuration of the legs, which can shrink the
+ * joint torques, with the same foot force.
+ *
+ * ATTENTION!!!this file is the stan
  *
  *  Created on: 2020 10.25
  *  Author: Edison Kun
@@ -79,11 +83,11 @@ double height_x = 0.382653;
 double height_y = 0.305;
 double height_z = -0.50;
 
-double forward_d = 0.08;
+double forward_d = 0.05;
 double y_direction = 0.05;
 double adjust_height = 0.03;
 
-double step_dis = 0.3;
+double step_dis = 0.15;
 
 valuetype generate_lf_motion(double height_1, double height_2, std::vector<JointPositionsLimb>& lf_joint_positions, std::vector<valuetype>& lf_foot_position)
 {
@@ -280,6 +284,630 @@ valuetype generate_lf_motion(double height_1, double height_2, std::vector<Joint
     std::cout << "finish lf step 1" << std::endl;
     return pos_final;
 }
+
+//after middle point(respect to 0,0)
+valuetype generate_lf_motion_after(double height_1, double height_2, std::vector<JointPositionsLimb>& lf_joint_positions, std::vector<valuetype>& lf_foot_position)
+{
+    double x_start = height_x;
+    double y_start = height_y;
+    double z_start = height_z;
+
+    std::vector<std::vector<Time>> times_of_lf;
+    std::vector<std::vector<valuetype>>lf_leg_position;
+    std::vector<curves::PolynomialSplineQuinticVector3Curve> lf_leg_trajectory;
+
+    unsigned long step_num = 10;
+
+
+    times_of_lf.resize(step_num);
+    lf_leg_position.resize(step_num);
+    lf_leg_trajectory.resize(step_num);
+
+    unsigned long j;
+
+    //step 1: com move back and right;
+    j = 0;
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 2 - forward_d, y_start + y_direction, z_start));
+
+    times_of_lf[j].push_back(adjust_t);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 2 + forward_d, y_start + y_direction, z_start - adjust_height));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    //step 2: lf leg moves;
+
+    j = 1;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 2 + forward_d, y_start + y_direction, z_start - adjust_height));
+
+    times_of_lf[j].push_back(0.25 * period_t);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 2 + forward_d, y_start + y_direction, z_start - adjust_height + height_1));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    j = 2;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 2 + forward_d, y_start + y_direction, z_start - adjust_height + height_1));
+
+    double before_distance = -0.075;
+    times_of_lf[j].push_back(0.5 * period_t);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 2 + forward_d + before_distance, y_start + y_direction, z_start - adjust_height + height_1));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    j = 3;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 2 + forward_d + before_distance, y_start + y_direction, z_start - adjust_height + height_1));
+
+    times_of_lf[j].push_back(0.25 * period_t);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 2 + forward_d + before_distance, y_start + y_direction, z_start - adjust_height));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+
+    //step 3: com moves forward and left;
+    j = 4;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 2 + forward_d + before_distance, y_start + y_direction, z_start - adjust_height));
+
+    times_of_lf[j].push_back(adjust_t);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 2 - forward_d + before_distance, y_start - y_direction, z_start));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    //step 4:rh leg moves
+    j = 5;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 2 - forward_d + before_distance, y_start - y_direction, z_start));
+
+    times_of_lf[j].push_back(period_t);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 6 - forward_d + before_distance, y_start - y_direction, z_start));
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    //step 5:come moves back and keep in left;
+    j = 6;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 6 - forward_d + before_distance, y_start - y_direction, z_start));
+
+    times_of_lf[j].push_back(adjust_t);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 6 + forward_d + before_distance, y_start - y_direction, z_start - adjust_height));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    //step 6: rf leg moves
+    j = 7;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 6 + forward_d + before_distance, y_start - y_direction, z_start - adjust_height));
+
+    times_of_lf[j].push_back(period_t);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 6 + forward_d + before_distance, y_start - y_direction, z_start - adjust_height));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    //step 7: come moves forward and to right;
+
+    j = 8;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 6 + forward_d + before_distance, y_start - y_direction, z_start - adjust_height));
+
+    times_of_lf[j].push_back(adjust_t);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 6 - forward_d + before_distance, y_start + y_direction, z_start));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    //step 8: lh leg moves;
+
+    j = 9;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 6 - forward_d + before_distance, y_start + y_direction, z_start));
+
+    times_of_lf[j].push_back(period_t);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 2 - forward_d + before_distance, y_start + y_direction, z_start));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    valuetype pos_final;
+    pos_final << x_start - step_dis / 2 - forward_d + before_distance, y_start + y_direction, z_start;
+
+    double dt = 0;
+    double dt_ = 0;
+
+    valuetype evaluate_value;
+    Pose lf_leg_pose;
+    JointPositionsLimb joints;
+
+    while(dt <= 4 * (period_t + adjust_t))
+    {
+        if(dt <= adjust_t)
+        {
+            lf_leg_trajectory[0].evaluate(evaluate_value, dt);
+        }else if(dt > adjust_t && dt <= (0.25 * period_t + adjust_t))
+        {
+            dt_ = dt - adjust_t;
+            lf_leg_trajectory[1].evaluate(evaluate_value, dt_);
+        }else if(dt > (0.25 * period_t + adjust_t) && dt <= (0.75 * period_t + adjust_t))
+        {
+            dt_ = dt - (0.25 * period_t + adjust_t);
+            lf_leg_trajectory[2].evaluate(evaluate_value, dt_);
+        }else if(dt > (0.75 * period_t + adjust_t) && dt <= (period_t + adjust_t))
+        {
+            dt_ = dt - (0.75 * period_t + adjust_t);
+            lf_leg_trajectory[3].evaluate(evaluate_value, dt_);
+        }else if(dt > (period_t + adjust_t) && dt <=(period_t + 2 * adjust_t))
+        {
+            dt_ = dt - (period_t + adjust_t);
+            lf_leg_trajectory[4].evaluate(evaluate_value, dt_);
+        }else if(dt > (period_t + 2 * adjust_t) && dt <=(2 * period_t + 2 * adjust_t))
+        {
+            dt_ = dt - (period_t + 2 * adjust_t);
+            lf_leg_trajectory[5].evaluate(evaluate_value, dt_);
+        }else if(dt > (2 * period_t + 2 * adjust_t) && dt <=(2 * period_t + 3 * adjust_t))
+        {
+            dt_ = dt - (2 * period_t + 2 * adjust_t);
+            lf_leg_trajectory[6].evaluate(evaluate_value, dt_);
+        }else if(dt > (2 * period_t + 3 * adjust_t) && dt <=(3 * period_t + 3 * adjust_t))
+        {
+            dt_ = dt - (2 * period_t + 3 * adjust_t);
+            lf_leg_trajectory[7].evaluate(evaluate_value, dt_);
+        }else if(dt > (3 * period_t + 3 * adjust_t) && dt <=(3 * period_t + 4 * adjust_t))
+        {
+            dt_ = dt - (3 * period_t + 3 * adjust_t);
+            lf_leg_trajectory[8].evaluate(evaluate_value, dt_);
+        }else if(dt > (3 * period_t + 4 * adjust_t) && dt <=(4 * period_t + 4 * adjust_t))
+        {
+            dt_ = dt - (3 * period_t + 4 * adjust_t);
+            lf_leg_trajectory[9].evaluate(evaluate_value, dt_);
+        }else {
+            std::cout << "nothing" << std::endl;
+        }
+
+        lf_leg_pose.getPosition() << evaluate_value.x(), evaluate_value.y(), evaluate_value.z();
+        QK.InverseKinematicsSolve(lf_leg_pose.getPosition(), LimbEnum::LF_LEG, joints, joints, "IN_LEFT");
+
+        lf_joint_positions.push_back(joints);
+        lf_foot_position.push_back(valuetype(lf_leg_pose.getPosition().x(), lf_leg_pose.getPosition().y(), lf_leg_pose.getPosition().z()));
+
+        dt = dt + delta_t;
+    }
+    std::cout << "finish lf step 1" << std::endl;
+    return pos_final;
+}
+
+//before middle point but with the bigger leg force;
+valuetype generate_lf_motion_before_bigger_force(double height_1, double height_2, std::vector<JointPositionsLimb>& lf_joint_positions, std::vector<valuetype>& lf_foot_position)
+{
+    double x_start = height_x;
+    double y_start = height_y;
+    double z_start = height_z;
+
+    std::vector<std::vector<Time>> times_of_lf;
+    std::vector<std::vector<valuetype>>lf_leg_position;
+    std::vector<curves::PolynomialSplineQuinticVector3Curve> lf_leg_trajectory;
+
+    unsigned long step_num = 10;
+
+
+    times_of_lf.resize(step_num);
+    lf_leg_position.resize(step_num);
+    lf_leg_trajectory.resize(step_num);
+
+    double before_distance;
+    before_distance = -0.075;
+
+    unsigned long j;
+
+    //step 1: com move back and right;
+    j = 0;
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 2 - forward_d + before_distance, y_start + y_direction, z_start));
+
+    times_of_lf[j].push_back(adjust_t);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 2 + forward_d + before_distance, y_start + y_direction, z_start - adjust_height));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    //step 2: lf leg moves;
+
+    j = 1;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 2 + forward_d + before_distance, y_start + y_direction, z_start - adjust_height));
+
+    times_of_lf[j].push_back(0.25 * period_t);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 2 + forward_d + before_distance, y_start + y_direction, z_start - adjust_height + height_1));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    j = 2;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 2 + forward_d + before_distance, y_start + y_direction, z_start - adjust_height + height_1));
+
+    before_distance = 0.075;
+    times_of_lf[j].push_back(0.5 * period_t);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 2 + forward_d + before_distance, y_start + y_direction, z_start - adjust_height + height_1));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    j = 3;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 2 + forward_d + before_distance, y_start + y_direction, z_start - adjust_height + height_1));
+
+    times_of_lf[j].push_back(0.25 * period_t);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 2 + forward_d + before_distance, y_start + y_direction, z_start - adjust_height));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+
+    //step 3: com moves forward and left;
+    j = 4;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 2 + forward_d + before_distance, y_start + y_direction, z_start - adjust_height));
+
+    times_of_lf[j].push_back(adjust_t);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 2 - forward_d + before_distance, y_start - y_direction, z_start));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    //step 4:rh leg moves
+    j = 5;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 2 - forward_d + before_distance, y_start - y_direction, z_start));
+
+    times_of_lf[j].push_back(period_t);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 6 - forward_d + before_distance, y_start - y_direction, z_start));
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    //step 5:come moves back and keep in left;
+    j = 6;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 6 - forward_d + before_distance, y_start - y_direction, z_start));
+
+    times_of_lf[j].push_back(adjust_t);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 6 + forward_d + before_distance, y_start - y_direction, z_start - adjust_height));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    //step 6: rf leg moves
+    j = 7;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 6 + forward_d + before_distance, y_start - y_direction, z_start - adjust_height));
+
+    times_of_lf[j].push_back(period_t);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 6 + forward_d + before_distance, y_start - y_direction, z_start - adjust_height));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    //step 7: come moves forward and to right;
+
+    j = 8;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 6 + forward_d + before_distance, y_start - y_direction, z_start - adjust_height));
+
+    times_of_lf[j].push_back(adjust_t);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 6 - forward_d + before_distance, y_start + y_direction, z_start));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    //step 8: lh leg moves;
+
+    j = 9;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 6 - forward_d + before_distance, y_start + y_direction, z_start));
+
+    times_of_lf[j].push_back(period_t);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 2 - forward_d + before_distance, y_start + y_direction, z_start));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    valuetype pos_final;
+    pos_final << x_start - step_dis / 2 - forward_d + before_distance, y_start + y_direction, z_start;
+
+    double dt = 0;
+    double dt_ = 0;
+
+    valuetype evaluate_value;
+    Pose lf_leg_pose;
+    JointPositionsLimb joints;
+
+    while(dt <= 4 * (period_t + adjust_t))
+    {
+        if(dt <= adjust_t)
+        {
+            lf_leg_trajectory[0].evaluate(evaluate_value, dt);
+        }else if(dt > adjust_t && dt <= (0.25 * period_t + adjust_t))
+        {
+            dt_ = dt - adjust_t;
+            lf_leg_trajectory[1].evaluate(evaluate_value, dt_);
+        }else if(dt > (0.25 * period_t + adjust_t) && dt <= (0.75 * period_t + adjust_t))
+        {
+            dt_ = dt - (0.25 * period_t + adjust_t);
+            lf_leg_trajectory[2].evaluate(evaluate_value, dt_);
+        }else if(dt > (0.75 * period_t + adjust_t) && dt <= (period_t + adjust_t))
+        {
+            dt_ = dt - (0.75 * period_t + adjust_t);
+            lf_leg_trajectory[3].evaluate(evaluate_value, dt_);
+        }else if(dt > (period_t + adjust_t) && dt <=(period_t + 2 * adjust_t))
+        {
+            dt_ = dt - (period_t + adjust_t);
+            lf_leg_trajectory[4].evaluate(evaluate_value, dt_);
+        }else if(dt > (period_t + 2 * adjust_t) && dt <=(2 * period_t + 2 * adjust_t))
+        {
+            dt_ = dt - (period_t + 2 * adjust_t);
+            lf_leg_trajectory[5].evaluate(evaluate_value, dt_);
+        }else if(dt > (2 * period_t + 2 * adjust_t) && dt <=(2 * period_t + 3 * adjust_t))
+        {
+            dt_ = dt - (2 * period_t + 2 * adjust_t);
+            lf_leg_trajectory[6].evaluate(evaluate_value, dt_);
+        }else if(dt > (2 * period_t + 3 * adjust_t) && dt <=(3 * period_t + 3 * adjust_t))
+        {
+            dt_ = dt - (2 * period_t + 3 * adjust_t);
+            lf_leg_trajectory[7].evaluate(evaluate_value, dt_);
+        }else if(dt > (3 * period_t + 3 * adjust_t) && dt <=(3 * period_t + 4 * adjust_t))
+        {
+            dt_ = dt - (3 * period_t + 3 * adjust_t);
+            lf_leg_trajectory[8].evaluate(evaluate_value, dt_);
+        }else if(dt > (3 * period_t + 4 * adjust_t) && dt <=(4 * period_t + 4 * adjust_t))
+        {
+            dt_ = dt - (3 * period_t + 4 * adjust_t);
+            lf_leg_trajectory[9].evaluate(evaluate_value, dt_);
+        }else {
+            std::cout << "nothing" << std::endl;
+        }
+
+        lf_leg_pose.getPosition() << evaluate_value.x(), evaluate_value.y(), evaluate_value.z();
+        QK.InverseKinematicsSolve(lf_leg_pose.getPosition(), LimbEnum::LF_LEG, joints, joints, "IN_LEFT");
+
+        lf_joint_positions.push_back(joints);
+        lf_foot_position.push_back(valuetype(lf_leg_pose.getPosition().x(), lf_leg_pose.getPosition().y(), lf_leg_pose.getPosition().z()));
+
+        dt = dt + delta_t;
+    }
+    std::cout << "finish lf step 1" << std::endl;
+    return pos_final;
+}
+
+//before middle point and with the lower leg force;
+valuetype generate_lf_motion_before(double height_1, double height_2, std::vector<JointPositionsLimb>& lf_joint_positions, std::vector<valuetype>& lf_foot_position)
+{
+    double x_start = height_x;
+    double y_start = height_y;
+    double z_start = height_z;
+
+    std::vector<std::vector<Time>> times_of_lf;
+    std::vector<std::vector<valuetype>>lf_leg_position;
+    std::vector<curves::PolynomialSplineQuinticVector3Curve> lf_leg_trajectory;
+
+    unsigned long step_num = 10;
+
+
+    times_of_lf.resize(step_num);
+    lf_leg_position.resize(step_num);
+    lf_leg_trajectory.resize(step_num);
+
+    unsigned long j;
+
+    //step 1: com move back and right;
+    double before_distance;
+    before_distance = 0.075;
+    j = 0;
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 2 - forward_d + before_distance, y_start + y_direction, z_start));
+
+    times_of_lf[j].push_back(adjust_t);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 2 + forward_d + before_distance, y_start + y_direction, z_start - adjust_height));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    //step 2: lf leg moves;
+
+    j = 1;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 2 + forward_d + before_distance, y_start + y_direction, z_start - adjust_height));
+
+    times_of_lf[j].push_back(0.2 * period_t);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 2 + forward_d + before_distance, y_start + y_direction, z_start - adjust_height + height_1));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    //plan the joint angles;
+    Pose start_pose, final_pose;
+    JointPositionsLimb start_joints, final_joints;
+
+    start_pose.getPosition() << x_start - step_dis / 2 + forward_d + before_distance, y_start + y_direction, z_start - adjust_height + height_1;
+    QK.InverseKinematicsSolve(start_pose.getPosition(), LimbEnum::LF_LEG, start_joints, start_joints, "IN_LEFT");
+
+    final_pose.getPosition() << x_start + step_dis / 2 + forward_d + before_distance, y_start + y_direction, z_start - adjust_height + height_1;
+    QK.InverseKinematicsSolve(final_pose.getPosition(), LimbEnum::LF_LEG, final_joints, final_joints, "OUT_LEFT");
+
+    j = 2;
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(start_joints.x(), start_joints.y(), start_joints.z()));
+
+//    times_of_lf[j].push_back(0.4 * period_t);
+//    lf_leg_position[j].push_back(valuetype(start_joints.x(), 0, -M_PI));
+
+    times_of_lf[j].push_back(0.6 * period_t);
+    lf_leg_position[j].push_back(valuetype(final_joints.x(), final_joints.y(), final_joints.z() - 2 * M_PI));
+
+    //        std::cout << "final joint is " << final_joints << std::endl;
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    j = 3;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 2 + forward_d + before_distance, y_start + y_direction, z_start - adjust_height + height_1));
+
+    times_of_lf[j].push_back(0.2 * period_t);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 2 + forward_d + before_distance, y_start + y_direction, z_start - adjust_height));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+
+    //step 3: com moves forward and left;
+    j = 4;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 2 + forward_d + before_distance, y_start + y_direction, z_start - adjust_height));
+
+    times_of_lf[j].push_back(adjust_t);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 2 - forward_d + before_distance, y_start - y_direction, z_start));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    //step 4:rh leg moves
+    j = 5;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 2 - forward_d + before_distance, y_start - y_direction, z_start));
+
+    times_of_lf[j].push_back(period_t);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 6 - forward_d + before_distance, y_start - y_direction, z_start));
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    //step 5:come moves back and keep in left;
+    j = 6;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 6 - forward_d + before_distance, y_start - y_direction, z_start));
+
+    times_of_lf[j].push_back(adjust_t);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 6 + forward_d + before_distance, y_start - y_direction, z_start - adjust_height));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    //step 6: rf leg moves
+    j = 7;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start + step_dis / 6 + forward_d + before_distance, y_start - y_direction, z_start - adjust_height));
+
+    times_of_lf[j].push_back(period_t);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 6 + forward_d + before_distance, y_start - y_direction, z_start - adjust_height));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    //step 7: come moves forward and to right;
+
+    j = 8;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 6 + forward_d + before_distance, y_start - y_direction, z_start - adjust_height));
+
+    times_of_lf[j].push_back(adjust_t);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 6 - forward_d + before_distance, y_start + y_direction, z_start));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    //step 8: lh leg moves;
+
+    j = 9;
+
+    times_of_lf[j].push_back(0.0);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 6 - forward_d + before_distance, y_start + y_direction, z_start));
+
+    times_of_lf[j].push_back(period_t);
+    lf_leg_position[j].push_back(valuetype(x_start - step_dis / 2 - forward_d + before_distance, y_start + y_direction, z_start));
+
+    lf_leg_trajectory[j].fitCurve(times_of_lf[j], lf_leg_position[j]);
+
+    valuetype pos_final;
+    pos_final << x_start - step_dis / 2 - forward_d + before_distance, y_start + y_direction, z_start;
+
+    double dt = 0;
+    double dt_ = 0;
+
+    valuetype evaluate_value;
+    Pose lf_leg_pose;
+    JointPositionsLimb joints;
+
+    while(dt <= 4 * (period_t + adjust_t))
+    {
+        if(dt <= adjust_t)
+        {
+            lf_leg_trajectory[0].evaluate(evaluate_value, dt);
+        }else if(dt > adjust_t && dt <= (0.2 * period_t + adjust_t))
+        {
+            dt_ = dt - adjust_t;
+            lf_leg_trajectory[1].evaluate(evaluate_value, dt_);
+        }else if(dt > (0.2 * period_t + adjust_t) && dt <= (0.8 * period_t + adjust_t))
+        {
+            dt_ = dt - (0.2 * period_t + adjust_t);
+            lf_leg_trajectory[2].evaluate(evaluate_value, dt_);//joints
+        }else if(dt > (0.8 * period_t + adjust_t) && dt <= (period_t + adjust_t))
+        {
+            dt_ = dt - (0.8 * period_t + adjust_t);
+            lf_leg_trajectory[3].evaluate(evaluate_value, dt_);
+        }else if(dt > (period_t + adjust_t) && dt <=(period_t + 2 * adjust_t))
+        {
+            dt_ = dt - (period_t + adjust_t);
+            lf_leg_trajectory[4].evaluate(evaluate_value, dt_);
+        }else if(dt > (period_t + 2 * adjust_t) && dt <=(2 * period_t + 2 * adjust_t))
+        {
+            dt_ = dt - (period_t + 2 * adjust_t);
+            lf_leg_trajectory[5].evaluate(evaluate_value, dt_);
+        }else if(dt > (2 * period_t + 2 * adjust_t) && dt <=(2 * period_t + 3 * adjust_t))
+        {
+            dt_ = dt - (2 * period_t + 2 * adjust_t);
+            lf_leg_trajectory[6].evaluate(evaluate_value, dt_);
+        }else if(dt > (2 * period_t + 3 * adjust_t) && dt <=(3 * period_t + 3 * adjust_t))
+        {
+            dt_ = dt - (2 * period_t + 3 * adjust_t);
+            lf_leg_trajectory[7].evaluate(evaluate_value, dt_);
+        }else if(dt > (3 * period_t + 3 * adjust_t) && dt <=(3 * period_t + 4 * adjust_t))
+        {
+            dt_ = dt - (3 * period_t + 3 * adjust_t);
+            lf_leg_trajectory[8].evaluate(evaluate_value, dt_);
+        }else if(dt > (3 * period_t + 4 * adjust_t) && dt <=(4 * period_t + 4 * adjust_t))
+        {
+            dt_ = dt - (3 * period_t + 4 * adjust_t);
+            lf_leg_trajectory[9].evaluate(evaluate_value, dt_);
+        }else {
+            std::cout << "nothing" << std::endl;
+        }
+
+        if(dt <= (0.2 * period_t + adjust_t))
+        {
+            lf_leg_pose.getPosition() << evaluate_value.x(), evaluate_value.y(), evaluate_value.z();
+            QK.InverseKinematicsSolve(lf_leg_pose.getPosition(), LimbEnum::LF_LEG, joints, joints, "IN_LEFT");
+        }else if(dt > (0.2 * period_t + adjust_t) && dt <= (0.8 * period_t + adjust_t))
+        {
+            joints << evaluate_value.x(), evaluate_value.y(), evaluate_value.z();
+            QK.FowardKinematicsSolve(joints,LimbEnum::LF_LEG, lf_leg_pose);
+        }else {
+            lf_leg_pose.getPosition() << evaluate_value.x(), evaluate_value.y(), evaluate_value.z();
+            QK.InverseKinematicsSolve(lf_leg_pose.getPosition(), LimbEnum::LF_LEG, joints, joints, "OUT_LEFT");
+            joints.z() = joints.z() - 2 * M_PI;
+        }
+        lf_joint_positions.push_back(joints);
+        lf_foot_position.push_back(valuetype(lf_leg_pose.getPosition().x(), lf_leg_pose.getPosition().y(), lf_leg_pose.getPosition().z()));
+
+        dt = dt + delta_t;
+    }
+    std::cout << "finish lf step 1" << std::endl;
+    return pos_final;
+}
+
+
 valuetype generate_rf_motion(double height_1, double height_2, std::vector<JointPositionsLimb>& rf_joint_positions, std::vector<valuetype>& rf_foot_position)
 {
     double rf_x_start = height_x;
@@ -857,6 +1485,21 @@ int main(int argc, char **argv)
     valuetype rf_pos_3 = generate_rf_motion(height_1, 0, rf_joint_positions, rf_foot_height);
     valuetype rh_pos_3 = generate_rh_motion(height_1, height_2, rh_joint_positions, rh_foot_height);
     valuetype lh_pos_3 = generate_lh_motion(height_1, height_2, lh_joint_positions, lh_foot_height);
+
+     lf_pos_3 = generate_lf_motion_after(height_1, 0, lf_joint_positions, lf_foot_height);
+     rf_pos_3 = generate_rf_motion(height_1, 0, rf_joint_positions, rf_foot_height);
+     rh_pos_3 = generate_rh_motion(height_1, height_2, rh_joint_positions, rh_foot_height);
+     lh_pos_3 = generate_lh_motion(height_1, height_2, lh_joint_positions, lh_foot_height);
+
+     lf_pos_3 = generate_lf_motion_before_bigger_force(height_1, 0, lf_joint_positions, lf_foot_height);
+     rf_pos_3 = generate_rf_motion(height_1, 0, rf_joint_positions, rf_foot_height);
+     rh_pos_3 = generate_rh_motion(height_1, height_2, rh_joint_positions, rh_foot_height);
+     lh_pos_3 = generate_lh_motion(height_1, height_2, lh_joint_positions, lh_foot_height);
+
+     lf_pos_3 = generate_lf_motion_before(height_1, 0, lf_joint_positions, lf_foot_height);
+     rf_pos_3 = generate_rf_motion(height_1, 0, rf_joint_positions, rf_foot_height);
+     rh_pos_3 = generate_rh_motion(height_1, height_2, rh_joint_positions, rh_foot_height);
+     lh_pos_3 = generate_lh_motion(height_1, height_2, lh_joint_positions, lh_foot_height);
 
     std::cout << "lf_pos_3 is " << lf_pos_3.transpose() << std::endl;
     std::cout << "rf_pos_3 is " << rf_pos_3.transpose() << std::endl;

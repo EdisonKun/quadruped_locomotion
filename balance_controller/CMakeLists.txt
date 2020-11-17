@@ -34,6 +34,7 @@ find_package(catkin REQUIRED COMPONENTS
   ros_ethercat_driver
   dynamic_reconfigure
   rosbag
+  grid_map_core
 )
 
 ## System dependencies are found with CMake's conventions
@@ -128,7 +129,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES balance_controller gazebo_state_hardware_interface robot_state_gazebo_ros_control_plugin
+  LIBRARIES balance_controller gazebo_state_hardware_interface robot_state_gazebo_ros_control_plugin base_motion_planning
   CATKIN_DEPENDS
   qp_solver
   roscpp
@@ -172,6 +173,7 @@ add_library(${PROJECT_NAME}
    src/motion_control/VirtualModelController.cpp
    src/contact_force_distribution/ContactForceDistributionBase.cpp
    src/contact_force_distribution/ContactForceDistribution.cpp
+   src/contact_force_distribution/ContactJointTorqueDistribution.cpp
    src/state_switcher/StateSwitcher.cpp
    src/state_switcher/StateSwitcherBase.cpp
 #   src/ros_controller/ros_balance_controller.cpp
@@ -196,6 +198,13 @@ target_link_libraries(robot_state_gazebo_ros_control_plugin
   gazebo_state_hardware_interface
   )
 
+add_library(base_motion_planning
+    src/base_motion_planning/base_motion_planning.cpp
+  )
+target_link_libraries(base_motion_planning
+  ${catkin_LIBRARIES}
+  )
+
 add_library(state_estimate_controller
   src/ros_controller/state_estimate_controller.cpp
   )
@@ -213,7 +222,16 @@ ${catkin_LIBRARIES}
 add_library(static_walk_controller
 src/ros_controller/static_walk_controller.cpp
 )
+
 target_link_libraries(static_walk_controller
+${catkin_LIBRARIES}
+)
+
+add_library(ifopt_test_lib
+src/test/ifopt_test.cpp
+)
+
+target_link_libraries(ifopt_test_lib
 ${catkin_LIBRARIES}
 )
 
@@ -239,6 +257,20 @@ target_link_libraries(read_rosbag_file_test_node
   ${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${Boost_LIBRARY_DIRS}
+  )
+add_executable(test_force_distribution_kp_node test/test_force_distribution_kp.cpp)
+target_link_libraries(test_force_distribution_kp_node
+  ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARY_DIRS}
+  )
+
+add_executable(base_motion_planning_node test/base_motion_planning_node.cpp)
+target_link_libraries(base_motion_planning_node
+  ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARY_DIRS}
+  base_motion_planning
   )
 
 

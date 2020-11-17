@@ -59,7 +59,6 @@ QuadrupedState::~QuadrupedState()
 };
 bool QuadrupedState::Initialize()
 {
-//    std::cout<<"Initialize QuadrupedState"<<std::endl;
     setLimbConfigure("><");//配置腿型
     setPoseBaseToWorld(Pose(Position(0,0,0), RotationQuaternion()));
     joint_positions_ << 0,1.57,-3.14,0,-1.57,3.14,0,1.57,-3.14,0,-1.57,3.14;

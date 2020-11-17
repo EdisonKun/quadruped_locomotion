@@ -83,7 +83,9 @@
   <depend>single_leg_test</depend>
   <depend>ros_ethercat_driver</depend>
   <depend>dynamic_reconfigure</depend>
+  <depend>base_motion_planning</depend>
   <depend>rosbag</depend>
+  <depend>grid_map_core</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

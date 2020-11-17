@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- <node name = "test_force_distribution_kp_node" pkg="balance_controller" type="test_force_distribution_kp_node"/> -->
+  <rosparam file="$(find balance_controller)/config/controller_gains_static_walk.yaml" command="load" />
+</launch>

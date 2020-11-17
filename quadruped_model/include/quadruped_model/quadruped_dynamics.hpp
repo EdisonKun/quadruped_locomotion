@@ -10,11 +10,16 @@
 #include"ct/core/core.h"
 #include"ct/rbd/Common"
 
+using namespace RigidBodyDynamics;
+using namespace RigidBodyDynamics::Math;
 namespace quadruped_model {
 class RobotDynamics
 {
 public:
     RobotDynamics();
+    unsigned int NumofJoint();
+    ~RobotDynamics();
+    RigidBodyDynamics::Model* GetModel();
 
 private:
     RigidBodyDynamics::Model* quadruped_model_;

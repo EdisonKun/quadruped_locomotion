@@ -3,7 +3,49 @@
      Commit Version: 1.5.0-0-g9aa0fdb  Build Version: 1.5.7004.21443
      For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
 <robot name="quadruped_model">
+  <link
+    name="world">
+    <inertial>
+      <origin
+        xyz="0.006699 -0.000736 0.001288"
+        rpy="0 0 0" />
+      <mass
+        value="27.801" />
+      <inertia
+        ixx="0.263893"
+        ixy="0"
+        ixz="0"
+        iyy="2.018032"
+        iyz="0"
+        izz="2.056458" />
+    </inertial>
+  </link>
+  <joint
+    name="fixed_1_joint"
+    type="revolute">
+    <origin
+      xyz="0.427 0.075 -0.0095"
+      rpy="0 1.5708 0" />
+    <parent
+      link="world" />
+    <child
+      link="base_link" />
+    <axis
+      xyz="0 0 1" />
+      <limit
+      effort="300"
+      velocity="10"
+      lower="-3.0"
+      upper="3.0"/>
+  </joint>
 
+  <!-- <link name = "world"/>
+  <joint name="body_link" type="fixed">
+    <parent link="world"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+  </joint> -->
   <link
     name="base_link">
     <inertial>

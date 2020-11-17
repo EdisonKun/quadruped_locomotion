@@ -70,7 +70,7 @@ bool static_walk_controller::init(hardware_interface::RobotStateInterface *hardw
 
 void static_walk_controller::update(const ros::Time &time, const ros::Duration &period)
 {
-
+    std::cout << "running the static walk controller" << std::endl;
 
 }
 

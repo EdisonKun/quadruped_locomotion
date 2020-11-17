@@ -1116,6 +1116,11 @@
        <string>Page</string>
       </attribute>
      </widget>
+     <widget class="QWidget" name="static_walk">
+      <attribute name="title">
+       <string>Page</string>
+      </attribute>
+     </widget>
     </widget>
    </item>
   </layout>
