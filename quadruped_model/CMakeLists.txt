@@ -185,7 +185,7 @@ include_directories(
 # )
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
-add_executable(kinematics_test_node src/kinematicsTest.cpp)
+add_executable(kinematics_test_node exe/kinematicsTest.cpp)
 add_executable(model_dynamics_test_node src/quadruped_dynamics.cpp)
 
 target_link_libraries(model_dynamics_test_node
@@ -200,7 +200,7 @@ target_link_libraries(kinematics_test_node
   ${RBDL_LIBRARY}
   ${RBDL_URDFReader_LIBRARY})
 
-add_executable(bodymovesplanning_node src/bodymovesplanning.cpp)
+add_executable(bodymovesplanning_node exe/bodymovesplanning.cpp)
 
 target_link_libraries(bodymovesplanning_node
   ${PROJECT_NAME}
@@ -208,7 +208,7 @@ target_link_libraries(bodymovesplanning_node
   ${RBDL_LIBRARY}
   ${RBDL_URDFReader_LIBRARY})
 
-add_executable(bodymovesplanning_v1_node src/bodymovesplanning_v1.cpp)
+add_executable(bodymovesplanning_v1_node exe/bodymovesplanning_v1.cpp)
 
 target_link_libraries(bodymovesplanning_v1_node
   ${PROJECT_NAME}
@@ -216,7 +216,7 @@ target_link_libraries(bodymovesplanning_v1_node
   ${RBDL_LIBRARY}
   ${RBDL_URDFReader_LIBRARY})
 
-add_executable(bodymovesplanning_v2_node src/bodymovesplanning_v2.cpp)
+add_executable(bodymovesplanning_v2_node exe/bodymovesplanning_v2.cpp)
 
 target_link_libraries(bodymovesplanning_v2_node
   ${PROJECT_NAME}
@@ -224,7 +224,7 @@ target_link_libraries(bodymovesplanning_v2_node
   ${RBDL_LIBRARY}
   ${RBDL_URDFReader_LIBRARY})
 
-add_executable(withwheelmotion_node src/withwheelmotion.cpp)
+add_executable(withwheelmotion_node exe/withwheelmotion.cpp)
 
 target_link_libraries(withwheelmotion_node
   ${PROJECT_NAME}
@@ -232,7 +232,7 @@ target_link_libraries(withwheelmotion_node
   ${RBDL_LIBRARY}
   ${RBDL_URDFReader_LIBRARY})
 
-add_executable(walk_to_stairs_node src/walk_to_stairs.cpp)
+add_executable(walk_to_stairs_node exe/walk_to_stairs.cpp)
 
 target_link_libraries(walk_to_stairs_node
   ${PROJECT_NAME}
@@ -240,7 +240,7 @@ target_link_libraries(walk_to_stairs_node
   ${RBDL_LIBRARY}
   ${RBDL_URDFReader_LIBRARY})
 
-add_executable(rolling_walk_to_stairs_node src/rolling_walk_to_stairs.cpp)
+add_executable(rolling_walk_to_stairs_node exe/rolling_walk_to_stairs.cpp)
 
 target_link_libraries(rolling_walk_to_stairs_node
   ${PROJECT_NAME}
@@ -248,7 +248,7 @@ target_link_libraries(rolling_walk_to_stairs_node
   ${RBDL_LIBRARY}
   ${RBDL_URDFReader_LIBRARY})
 
-add_executable(left_walk_to_stairs_node src/left_walk_tostairs.cpp)
+add_executable(left_walk_to_stairs_node exe/left_walk_tostairs.cpp)
 
 target_link_libraries(left_walk_to_stairs_node
   ${PROJECT_NAME}
@@ -256,7 +256,7 @@ target_link_libraries(left_walk_to_stairs_node
   ${RBDL_LIBRARY}
   ${RBDL_URDFReader_LIBRARY})
 
-add_executable(walk_state_to_left_upstairs_node src/walk_state_to_upstairs.cpp)
+add_executable(walk_state_to_left_upstairs_node exe/walk_state_to_upstairs.cpp)
 
 target_link_libraries(walk_state_to_left_upstairs_node
   ${PROJECT_NAME}
@@ -264,7 +264,7 @@ target_link_libraries(walk_state_to_left_upstairs_node
   ${RBDL_LIBRARY}
   ${RBDL_URDFReader_LIBRARY})
 
-add_executable(test_node src/test.cpp)
+add_executable(test_node exe/test.cpp)
 
 target_link_libraries(test_node
   ${PROJECT_NAME}
@@ -272,7 +272,7 @@ target_link_libraries(test_node
   ${RBDL_LIBRARY}
   ${RBDL_URDFReader_LIBRARY})
 
-add_executable(catch_a_ball_node src/catch_a_ball.cpp)
+add_executable(catch_a_ball_node exe/catch_a_ball.cpp)
 
 target_link_libraries(catch_a_ball_node
   ${PROJECT_NAME}
@@ -280,7 +280,7 @@ target_link_libraries(catch_a_ball_node
   ${RBDL_LIBRARY}
   ${RBDL_URDFReader_LIBRARY})
 
-add_executable(rolling_walk_to_stairs_v2_node src/rolling_walk_to_stairs_v2.cpp)
+add_executable(rolling_walk_to_stairs_v2_node exe/rolling_walk_to_stairs_v2.cpp)
 
 target_link_libraries(rolling_walk_to_stairs_v2_node
   ${PROJECT_NAME}
@@ -289,7 +289,7 @@ target_link_libraries(rolling_walk_to_stairs_v2_node
   ${RBDL_URDFReader_LIBRARY})
 
 
-add_executable(x_to_stairs_node src/x_to_stairs.cpp)
+add_executable(x_to_stairs_node exe/x_to_stairs.cpp)
 
 target_link_libraries(x_to_stairs_node
   ${PROJECT_NAME}
@@ -297,7 +297,7 @@ target_link_libraries(x_to_stairs_node
   ${RBDL_LIBRARY}
   ${RBDL_URDFReader_LIBRARY})
 
-add_executable(x_to_stairs_v2_node src/x_to_stairs_v2.cpp)
+add_executable(x_to_stairs_v2_node exe/x_to_stairs_v2.cpp)
 
 target_link_libraries(x_to_stairs_v2_node
   ${PROJECT_NAME}
@@ -305,7 +305,7 @@ target_link_libraries(x_to_stairs_v2_node
   ${RBDL_LIBRARY}
   ${RBDL_URDFReader_LIBRARY})
 
-add_executable(x_to_stairs_v3_node src/x_to_stairs_v3.cpp)
+add_executable(x_to_stairs_v3_node exe/x_to_stairs_v3.cpp)
 
 target_link_libraries(x_to_stairs_v3_node
   ${PROJECT_NAME}
@@ -313,7 +313,7 @@ target_link_libraries(x_to_stairs_v3_node
   ${RBDL_LIBRARY}
   ${RBDL_URDFReader_LIBRARY})
 
-add_executable(x_to_stairs_v4_node src/x_to_stairs_v4.cpp)
+add_executable(x_to_stairs_v4_node exe/x_to_stairs_v4.cpp)
 
 target_link_libraries(x_to_stairs_v4_node
   ${PROJECT_NAME}
@@ -321,7 +321,7 @@ target_link_libraries(x_to_stairs_v4_node
   ${RBDL_LIBRARY}
   ${RBDL_URDFReader_LIBRARY})
 
-add_executable(x_to_stairs_v6_node src/x_to_stairs_v6.cpp)
+add_executable(x_to_stairs_v6_node exe/x_to_stairs_v6.cpp)
 
 target_link_libraries(x_to_stairs_v6_node
   ${PROJECT_NAME}
@@ -329,7 +329,7 @@ target_link_libraries(x_to_stairs_v6_node
   ${RBDL_LIBRARY}
   ${RBDL_URDFReader_LIBRARY})
 
-add_executable(x_to_stairs_v7_node src/x_to_stairs_v7.cpp)
+add_executable(x_to_stairs_v7_node exe/x_to_stairs_v7.cpp)
 
 target_link_libraries(x_to_stairs_v7_node
   ${PROJECT_NAME}
@@ -337,7 +337,7 @@ target_link_libraries(x_to_stairs_v7_node
   ${RBDL_LIBRARY}
   ${RBDL_URDFReader_LIBRARY})
 
-add_executable(kneel_down_node src/kneel_down.cpp)
+add_executable(kneel_down_node exe/kneel_down.cpp)
 
 target_link_libraries(kneel_down_node
   ${PROJECT_NAME}
@@ -345,8 +345,16 @@ target_link_libraries(kneel_down_node
   ${RBDL_LIBRARY}
   ${RBDL_URDFReader_LIBRARY})
 
+add_executable(15_walk_and_kneel_down_node exe/15_walk_and_kneel_down.cpp)
 
-add_executable(across_the_ravines_node src/Across_the_ravines.cpp)
+target_link_libraries(15_walk_and_kneel_down_node
+  ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+  ${RBDL_LIBRARY}
+  ${RBDL_URDFReader_LIBRARY})
+
+
+add_executable(across_the_ravines_node exe/Across_the_ravines.cpp)
 
 target_link_libraries(across_the_ravines_node
   ${PROJECT_NAME}

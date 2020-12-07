@@ -83,8 +83,8 @@ double height_x = 0.382653;
 double height_y = 0.305;
 double height_z = -0.50;
 
-double forward_d = 0.05;
-double y_direction = 0.05;
+double forward_d = 0.02;
+double y_direction = 0.02;
 double adjust_height = 0.03;
 
 double step_dis = 0.15;
@@ -1481,30 +1481,15 @@ int main(int argc, char **argv)
     std::vector<JointPositionsLimb> rh_joint_positions, rf_joint_positions, lh_joint_positions, lf_joint_positions;
     std::vector<valuetype> lf_foot_height, rf_foot_height, rh_foot_height, lh_foot_height;
 
-    valuetype lf_pos_3 = generate_lf_motion(height_1, 0, lf_joint_positions, lf_foot_height);
-    valuetype rf_pos_3 = generate_rf_motion(height_1, 0, rf_joint_positions, rf_foot_height);
-    valuetype rh_pos_3 = generate_rh_motion(height_1, height_2, rh_joint_positions, rh_foot_height);
-    valuetype lh_pos_3 = generate_lh_motion(height_1, height_2, lh_joint_positions, lh_foot_height);
+    valuetype lf_pos_3, rf_pos_3,rh_pos_3, lh_pos_3;
 
-     lf_pos_3 = generate_lf_motion_after(height_1, 0, lf_joint_positions, lf_foot_height);
-     rf_pos_3 = generate_rf_motion(height_1, 0, rf_joint_positions, rf_foot_height);
-     rh_pos_3 = generate_rh_motion(height_1, height_2, rh_joint_positions, rh_foot_height);
-     lh_pos_3 = generate_lh_motion(height_1, height_2, lh_joint_positions, lh_foot_height);
-
-     lf_pos_3 = generate_lf_motion_before_bigger_force(height_1, 0, lf_joint_positions, lf_foot_height);
-     rf_pos_3 = generate_rf_motion(height_1, 0, rf_joint_positions, rf_foot_height);
-     rh_pos_3 = generate_rh_motion(height_1, height_2, rh_joint_positions, rh_foot_height);
-     lh_pos_3 = generate_lh_motion(height_1, height_2, lh_joint_positions, lh_foot_height);
-
-     lf_pos_3 = generate_lf_motion_before(height_1, 0, lf_joint_positions, lf_foot_height);
-     rf_pos_3 = generate_rf_motion(height_1, 0, rf_joint_positions, rf_foot_height);
-     rh_pos_3 = generate_rh_motion(height_1, height_2, rh_joint_positions, rh_foot_height);
-     lh_pos_3 = generate_lh_motion(height_1, height_2, lh_joint_positions, lh_foot_height);
-
-    std::cout << "lf_pos_3 is " << lf_pos_3.transpose() << std::endl;
-    std::cout << "rf_pos_3 is " << rf_pos_3.transpose() << std::endl;
-    std::cout << "rh_pos_3 is " << rh_pos_3.transpose() << std::endl;
-    std::cout << "lh_pos_3 is " << lh_pos_3.transpose() << std::endl;
+//    for(unsigned int i = 0; i < 8; i++)
+//    {
+        lf_pos_3 = generate_lf_motion(height_1, 0, lf_joint_positions, lf_foot_height);
+        rf_pos_3 = generate_rf_motion(height_1, 0, rf_joint_positions, rf_foot_height);
+        rh_pos_3 = generate_rh_motion(height_1, height_2, rh_joint_positions, rh_foot_height);
+        lh_pos_3 = generate_lh_motion(height_1, height_2, lh_joint_positions, lh_foot_height);
+//    }
 
     quadruped_model::JointPositions joint_positions;
     std::vector<quadruped_model::JointPositions> joint_positions_total;
@@ -1530,9 +1515,9 @@ int main(int argc, char **argv)
 
       }
      std::cout << "size is " << joint_positions_total.size() << std::endl;
-     std::string file_name = "walking_in_plain.txt";
+     std::string file_name = "walking_in_plain_small.txt";
      SaveAsFile(file_name, joint_positions_total);
-     file_name = "walking_in_plain_read.txt";
+     file_name = "walking_in_plain_small_read.txt";
      SaveAsFile_with_footheight(file_name, joint_positions_total, lf_foot_height, rf_foot_height, rh_foot_height, lh_foot_height);
      return 1;
 }

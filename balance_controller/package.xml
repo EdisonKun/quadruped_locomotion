@@ -86,6 +86,12 @@
   <depend>base_motion_planning</depend>
   <depend>rosbag</depend>
   <depend>grid_map_core</depend>
+  <depend>ifopt_test_lib</depend>
+  <depend>ifopt</depend>
+  <depend>ct_core</depend>
+  <depend>ct_models</depend>
+  <depend>ct_optcon</depend>
+  <depend>ct_rbd</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

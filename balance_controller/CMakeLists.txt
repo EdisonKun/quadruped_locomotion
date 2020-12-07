@@ -7,7 +7,10 @@ project(balance_controller)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-
+set(ct_core_DIR /usr/local/share/ct_core/cmake)
+set(ct_models_DIR /usr/local/share/ct_models/cmake)
+set(ct_optcon_DIR /usr/local/share/ct_optcon/cmake)
+set(ct_rbd_DIR /usr/local/share/ct_rbd/cmake)
 
 find_package(catkin REQUIRED COMPONENTS
   qp_solver
@@ -35,10 +38,16 @@ find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure
   rosbag
   grid_map_core
+  ct_core
+  ct_models
+  ct_optcon
+  ct_rbd
 )
 
 ## System dependencies are found with CMake's conventions
  find_package(Boost REQUIRED QUIET)
+ find_package(ifopt 2.0.1 REQUIRED)
+ find_package(Eigen3 REQUIRED)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -163,8 +172,10 @@ catkin_package(
 ## Your package locations should be listed before other locations
 include_directories(
   include
+  test/include
   ${catkin_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
+  ${ifopt_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -176,10 +187,18 @@ add_library(${PROJECT_NAME}
    src/contact_force_distribution/ContactJointTorqueDistribution.cpp
    src/state_switcher/StateSwitcher.cpp
    src/state_switcher/StateSwitcherBase.cpp
+   src/quadruped_model_CPPad/Quadruped_Kin_CppAD.cpp
 #   src/ros_controller/ros_balance_controller.cpp
 #   src/ros_controller/gazebo_state_hardware_interface.cpp
 #   include/balance_controller/contact_force_distribution/ContactForceDistributionBase.hpp
  )
+target_link_libraries(${PROJECT_NAME}
+    ${catkin_LIBRARIES}
+    ${Boost_LIBRARY_DIRS}
+    ${ifopt_LIBRARIES}
+    /usr/local/lib/libiitgenquadruped_model.so
+    /usr/local/lib/libiitgenhyq.so)
+
 add_library(gazebo_state_hardware_interface
     src/ros_controller/gazebo_state_hardware_interface.cpp
   )
@@ -228,11 +247,21 @@ ${catkin_LIBRARIES}
 )
 
 add_library(ifopt_test_lib
-src/test/ifopt_test.cpp
+test/ifopt_test.cpp
 )
 
 target_link_libraries(ifopt_test_lib
 ${catkin_LIBRARIES}
+${ifopt_LIBRARIES}
+)
+
+add_library(quadruped_nonlinear_test_lib
+test/lib/quadruped_nonlinear_test.cpp
+)
+
+target_link_libraries(quadruped_nonlinear_test_lib
+${catkin_LIBRARIES}
+${ifopt_LIBRARIES}
 )
 
 #add_library(joint_torque_controller src/ros_controller/joint_torque_controller.cpp)
@@ -271,6 +300,37 @@ target_link_libraries(base_motion_planning_node
   ${catkin_LIBRARIES}
   ${Boost_LIBRARY_DIRS}
   base_motion_planning
+  )
+
+add_executable(ifopt_test_execuable_node test/ifopt_test_execuable.cpp)
+target_link_libraries(ifopt_test_execuable_node
+  ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARY_DIRS}
+  ${ifopt_LIBRARIES}
+  /usr/local/lib/libiitgenquadruped_model.so
+  /usr/local/lib/libiitgenhyq.so
+  )
+
+add_executable(Quadruped_model_cppad_test_node test/Quadruped_model_cppad_test.cpp)
+target_link_libraries(Quadruped_model_cppad_test_node
+  ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARY_DIRS}
+  ${ifopt_LIBRARIES}
+  /usr/local/lib/libiitgenquadruped_model.so
+  /usr/local/lib/libiitgenhyq.so
+  )
+
+
+
+add_executable(quadruped_nonlinear_exe_node test/quadruped_nonlinear_exe.cpp)
+target_link_libraries(quadruped_nonlinear_exe_node
+  ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARY_DIRS}
+  ${ifopt_LIBRARIES}
+  /usr/local/lib/libiitgenquadruped_model.so
   )
 
 

@@ -44,7 +44,9 @@ int main(int argc, char **argv)
     joint_state.name[11] = "rear_left_3_joint";
 
     std::ifstream readfile;
-    readfile.open("/home/kun/catkin_ws_dependency/walking_in_plain_read.txt");
+//    readfile.open("/home/kun/catkin_ws_dependency/15_walk_and_kneel_down_read.txt");
+    readfile.open("/home/kun/catkin_ws_dependency/catch_a_ball_read.txt");
+
     quadruped_model::JointPositions joint_position_file;
     std::vector<quadruped_model::JointPositions> joint_position_collection;
     double time;

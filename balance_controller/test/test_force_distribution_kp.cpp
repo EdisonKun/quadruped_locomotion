@@ -65,24 +65,7 @@ int main(int argc, char *argv[])
   pose_1.getRotation().setIdentity();
 
   free_gait::JointPositions all_joint_positons;
-  Position lf_position,rf_position,lh_position,rh_position;
-  lf_position << 0.38,0.305,-0.45;
-  Robot_state->InverseKinematicsSolve(lf_position,free_gait::LimbEnum::LF_LEG,joint_angles,joint_angles,"IN_LEFT");
-  Robot_state->setJointPositionsForLimb(free_gait::LimbEnum::LF_LEG, joint_angles);
-  all_joint_positons.toImplementation().segment(0,3) << joint_angles.x(),joint_angles.y(),joint_angles.z();
-
-  rf_position << 0.38,-0.305,-0.45;
-  Robot_state->InverseKinematicsSolve(rf_position,free_gait::LimbEnum::RF_LEG,joint_angles,joint_angles,"IN_LEFT");
-  all_joint_positons.toImplementation().segment(3,3) << joint_angles.x(),joint_angles.y(),joint_angles.z();
-
-  lh_position << -0.38,0.305,-0.45;
-  Robot_state->InverseKinematicsSolve(lh_position,free_gait::LimbEnum::LH_LEG,joint_angles,joint_angles,"IN_LEFT");
-  all_joint_positons.toImplementation().segment(9,3) << joint_angles.x(),joint_angles.y(),joint_angles.z();
-
-  rh_position << -0.38,-0.305,-0.45;
-  Robot_state->InverseKinematicsSolve(rh_position,free_gait::LimbEnum::RH_LEG,joint_angles,joint_angles,"IN_LEFT");
-  all_joint_positons.toImplementation().segment(6,3) << joint_angles.x(),joint_angles.y(),joint_angles.z();
-
+  all_joint_positons << 0.549977, 0.550527, 0.549459,0.551449, 0.684732, 0.266252, 0.55,0.551,0.548,0.544,0.695,0.2707;
   Robot_state->setJointPositions(all_joint_positons);
 
 
@@ -164,12 +147,12 @@ int main(int argc, char *argv[])
 
 
 
-//  Force force_foot;
-//  Torque torque_foot;
-//  force_foot << 0,0,100;
-//  torque_foot << 0,0,0;
+  Force force_foot;
+  Torque torque_foot;
+  force_foot << 0,0,100;
+  torque_foot << 0,0,0;
 
-//  contact_joint_torque_test->computeForceDistribution(force_foot, torque_foot);
+  contact_joint_torque_test->computeForceDistribution(force_foot, torque_foot);
 
 
 
@@ -252,30 +235,8 @@ int main(int argc, char *argv[])
 //  bool isinside;
 //  isinside = support_area.isInside(base_position_test);
 //  std::cout <<"isinside" << isinside << std::endl;
-
-//  std::cout << (Eigen::Matrix3d::Identity().replicate(1, 7))<< std::endl;
-
-//  using namespace std;
-//  Eigen::MatrixXf m(4,4);
-//  m <<  1, 2, 3, 4,
-//      5, 6, 7, 8,
-//      9,10,11,12,
-//      13,14,15,16;
-//  cout << "Block in the middle" << endl;
-//  cout << m.block<1,2>(2,2) << endl << endl;//position ,2,2. block size 1,1
-//  for (int i = 1; i <= 3; ++i)
-//  {
-//      cout << "Block of size " << i << "x" << i << endl;
-//      cout << m.block(0,0,i,i) << endl << endl;
-//  }
-
-
-
-
-
-
+//}
 }
-
 
 
 

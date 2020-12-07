@@ -88,12 +88,9 @@ void SaveAsFile_no_footheight(const std::string &file_name, const std::vector<Jo
     std::cout << "success store the file " << std::endl;
 }
 
-
+//read joint angle from the kneel down and move to the 0.2 0.45 0
 void generate_lf_motion(quadruped_model::JointPositionsLimb& lf_start_position, std::vector<JointPositionsLimb>& lf_joint_positions, std::vector<valuetype>& lf_foot_position)
 {
-    /****planning lf leg******/
-    //step 1: RF leg up and RH leg down, LF and LH keep the prepare angle unchanged;
-
     std::vector<std::vector<Time>> times_of_lf;
     std::vector<std::vector<valuetype>>lf_leg_position;
     std::vector<curves::PolynomialSplineQuinticVector3Curve> lf_leg_trajectory;
@@ -105,9 +102,9 @@ void generate_lf_motion(quadruped_model::JointPositionsLimb& lf_start_position, 
 
     JointPositionsLimb lf_joint;
     Pose fd_lf_pose, fd_lh_pose;
-    fd_lf_pose.getPosition() << 0.2, 0.45, 0;
-    QK.InverseKinematicsSolve(fd_lf_pose.getPosition(), LimbEnum::LF_LEG, lf_joint, lf_joint, "OUT_LEFT");
-
+    fd_lf_pose.getPosition() << 0.2, 0.305, 0.155;
+    QK.InverseKinematicsSolve(fd_lf_pose.getPosition(), LimbEnum::LF_LEG, lf_joint, lf_joint, "IN_RIGHT");
+    std::cout << "lf_joint is " << lf_joint << std::endl;
 
     // step 0;
     times_of_lf[0].push_back(0.0);
@@ -119,22 +116,25 @@ void generate_lf_motion(quadruped_model::JointPositionsLimb& lf_start_position, 
     lf_leg_trajectory[0].fitCurve(times_of_lf[0], lf_leg_position[0]);
 
     //step 3:
+    std::cout << "lf_joint is " << lf_joint << std::endl;
     lf_joint.z() = lf_joint.z() - 2 * M_PI;
+//    lf_joint << 0, 1.1, 2.2;
     QK.FowardKinematicsSolve(lf_joint,LimbEnum::LF_LEG,fd_lf_pose);
+    std::cout << fd_lf_pose.getPosition() << std::endl;
 
     times_of_lf[1].push_back(0.0);
     lf_leg_position[1].push_back(valuetype(fd_lf_pose.getPosition().x(), fd_lf_pose.getPosition().y(), fd_lf_pose.getPosition().z()));
 
     times_of_lf[1].push_back(period_t);
-    lf_leg_position[1].push_back(valuetype(fd_lf_pose.getPosition().x() - 0.1, fd_lf_pose.getPosition().y(), fd_lf_pose.getPosition().z()));
+    lf_leg_position[1].push_back(valuetype(fd_lf_pose.getPosition().x() - 0.08, fd_lf_pose.getPosition().y(), fd_lf_pose.getPosition().z()));
 
     lf_leg_trajectory[1].fitCurve(times_of_lf[1], lf_leg_position[1]);
 
     times_of_lf[2].push_back(0.0);
-    lf_leg_position[2].push_back(valuetype(fd_lf_pose.getPosition().x() - 0.1, fd_lf_pose.getPosition().y(), fd_lf_pose.getPosition().z()));
+    lf_leg_position[2].push_back(valuetype(fd_lf_pose.getPosition().x() - 0.08, fd_lf_pose.getPosition().y(), fd_lf_pose.getPosition().z()));
 
     times_of_lf[2].push_back(period_t);
-    lf_leg_position[2].push_back(valuetype(fd_lf_pose.getPosition().x() - 0.1, fd_lf_pose.getPosition().y(), fd_lf_pose.getPosition().z() + 0.01));
+    lf_leg_position[2].push_back(valuetype(fd_lf_pose.getPosition().x() - 0.08, fd_lf_pose.getPosition().y(), fd_lf_pose.getPosition().z() + 0.05));
 
     lf_leg_trajectory[2].fitCurve(times_of_lf[2], lf_leg_position[2]);
 
@@ -172,7 +172,7 @@ void generate_lf_motion(quadruped_model::JointPositionsLimb& lf_start_position, 
             lf_leg_pose.getPosition().y() = lf_leg_valuetype.y();
             lf_leg_pose.getPosition().z() = lf_leg_valuetype.z();
 
-            QK.InverseKinematicsSolve(lf_leg_pose.getPosition(),LimbEnum::LF_LEG, joints, joints, "OUT_LEFT");
+            QK.InverseKinematicsSolve(lf_leg_pose.getPosition(),LimbEnum::LF_LEG, joints, joints, "IN_RIGHT");
             joints.z() = joints.z() - 2 * M_PI;
         }
 
@@ -182,6 +182,7 @@ void generate_lf_motion(quadruped_model::JointPositionsLimb& lf_start_position, 
     }
     std::cout << "finish the lf_leg planning" << std::endl;
 }
+// read the joint angles of the kneel down;
 void generate_rh_motion_1(quadruped_model::JointPositionsLimb& rh_start_position, std::vector<JointPositionsLimb>& rh_joint_positions, std::vector<valuetype>& rh_foot_position)
 {
     /*******planning the RH leg *******/
@@ -236,6 +237,7 @@ void generate_rh_motion_1(quadruped_model::JointPositionsLimb& rh_start_position
     }
     std::cout << "finish the RH_leg planning" << std::endl;
 }
+// read the joint angles of the kneel down;
 void generate_rf_motion_1(quadruped_model::JointPositionsLimb& rf_start_position, std::vector<JointPositionsLimb>& rf_joint_positions, std::vector<valuetype>& rf_foot_position)
 {
     //    std::cout << "rf_joint_position size is " <<rf_joint_positions.size() << std::endl;
@@ -314,8 +316,9 @@ void generate_lh_motion_1(quadruped_model::JointPositionsLimb& lh_start_position
 
     JointPositionsLimb lh_joint;
     Pose fd_lh_pose;
-    fd_lh_pose.getPosition() << -0.2, 0.45, 0;
-    QK.InverseKinematicsSolve(fd_lh_pose.getPosition(), LimbEnum::LH_LEG, lh_joint, lh_joint, "IN_LEFT");
+    fd_lh_pose.getPosition() << -0.2, 0.305, 0.155;
+    QK.InverseKinematicsSolve(fd_lh_pose.getPosition(), LimbEnum::LH_LEG, lh_joint, lh_joint, "OUT_RIGHT");
+    std::cout << "lh_joint is" << lh_joint << std::endl;
 
     unsigned long j;
 
@@ -325,7 +328,7 @@ void generate_lh_motion_1(quadruped_model::JointPositionsLimb& lh_start_position
     lh_leg_position[j].push_back(valuetype(lh_start_position.x(), lh_start_position.y(), lh_start_position.z()));
 
     times_of_lh[j].push_back(2 * adjust_t);
-    lh_leg_position[j].push_back(valuetype(lh_joint.x(), lh_joint.y(), lh_joint.z() + 2 * M_PI));
+    lh_leg_position[j].push_back(valuetype(lh_joint.x(), -lh_joint.y(), lh_joint.z() + 2 * M_PI));
 
     lh_leg_trajectory[j].fitCurve(times_of_lh[j], lh_leg_position[j]);
 
@@ -334,16 +337,16 @@ void generate_lh_motion_1(quadruped_model::JointPositionsLimb& lh_start_position
     lh_leg_position[j].push_back(valuetype(fd_lh_pose.getPosition().x(), fd_lh_pose.getPosition().y(), fd_lh_pose.getPosition().z()));
 
     times_of_lh[j].push_back(adjust_t);
-    lh_leg_position[j].push_back(valuetype(fd_lh_pose.getPosition().x() + 0.1, fd_lh_pose.getPosition().y(), fd_lh_pose.getPosition().z()));
+    lh_leg_position[j].push_back(valuetype(fd_lh_pose.getPosition().x() + 0.08, fd_lh_pose.getPosition().y(), fd_lh_pose.getPosition().z()));
 
     lh_leg_trajectory[j].fitCurve(times_of_lh[j], lh_leg_position[j]);
 
     j = 2;
     times_of_lh[j].push_back(0);
-    lh_leg_position[j].push_back(valuetype(fd_lh_pose.getPosition().x() + 0.1, fd_lh_pose.getPosition().y(), fd_lh_pose.getPosition().z()));
+    lh_leg_position[j].push_back(valuetype(fd_lh_pose.getPosition().x() + 0.08, fd_lh_pose.getPosition().y(), fd_lh_pose.getPosition().z()));
 
     times_of_lh[j].push_back(adjust_t);
-    lh_leg_position[j].push_back(valuetype(fd_lh_pose.getPosition().x() + 0.1, fd_lh_pose.getPosition().y(), fd_lh_pose.getPosition().z() + 0.01));
+    lh_leg_position[j].push_back(valuetype(fd_lh_pose.getPosition().x() + 0.08, fd_lh_pose.getPosition().y(), fd_lh_pose.getPosition().z() + 0.05));
 
     lh_leg_trajectory[j].fitCurve(times_of_lh[j], lh_leg_position[j]);
 
@@ -351,6 +354,9 @@ void generate_lh_motion_1(quadruped_model::JointPositionsLimb& lh_start_position
     Pose lh_leg_pose;
     valuetype lh_leg_joint;
     JointPositionsLimb joints;
+    joints << 0, -1.11, -2.2;
+    QK.FowardKinematicsSolve(joints, LimbEnum::LH_LEG, lh_leg_pose);
+    std::cout << "lh_leg_position is " << lh_leg_pose.getPosition() << std::endl;
 
     /***** evaluate the leg position ******/
 
@@ -383,7 +389,8 @@ void generate_lh_motion_1(quadruped_model::JointPositionsLimb& lh_start_position
             lh_leg_pose.getPosition().y() = lh_leg_joint.y();
             lh_leg_pose.getPosition().z() = lh_leg_joint.z();
 
-            QK.InverseKinematicsSolve(lh_leg_pose.getPosition(),LimbEnum::LH_LEG, joints, joints, "IN_LEFT");
+            QK.InverseKinematicsSolve(lh_leg_pose.getPosition(),LimbEnum::LH_LEG, joints, joints, "OUT_RIGHT");
+            joints.y() = -joints.y();
             joints.z() = joints.z() + 2 * M_PI;
         }
 
@@ -401,7 +408,7 @@ int main(int argc, char **argv)
 
     //step 1, LF->0.13, RF->0.13, LH->0, RH->0
     std::ifstream readfile;
-    readfile.open("/home/kun/catkin_ws_dependency/kneel_down.txt");//calculated.txt
+    readfile.open("/home/kun/catkin_ws_dependency/15_walk_and_kneel_down.txt");
     assert(readfile.is_open());
     quadruped_model::JointPositions joint_position_file;
     std::vector<quadruped_model::JointPositions> joint_positions_read;
@@ -415,7 +422,6 @@ int main(int argc, char **argv)
             >> joint_position_file(9)>> joint_position_file(10)
             >> joint_position_file(11);
         joint_positions_read.push_back(joint_position_file);
-        //         std::cout << time <<" " << joint_position_file << std::endl;
     }
     readfile.close();
     joint_positions_read.pop_back();
