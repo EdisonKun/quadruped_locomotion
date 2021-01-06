@@ -280,6 +280,22 @@ target_link_libraries(catch_a_ball_node
   ${RBDL_LIBRARY}
   ${RBDL_URDFReader_LIBRARY})
 
+add_executable(catch_a_ball_fore_legs_node exe/catch_a_ball_fore_legs.cpp)
+
+target_link_libraries(catch_a_ball_fore_legs_node
+  ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+  ${RBDL_LIBRARY}
+  ${RBDL_URDFReader_LIBRARY})
+
+add_executable(throw_a_ball_node exe/throw_a_ball.cpp)
+
+target_link_libraries(throw_a_ball_node
+  ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+  ${RBDL_LIBRARY}
+  ${RBDL_URDFReader_LIBRARY})
+
 add_executable(rolling_walk_to_stairs_v2_node exe/rolling_walk_to_stairs_v2.cpp)
 
 target_link_libraries(rolling_walk_to_stairs_v2_node

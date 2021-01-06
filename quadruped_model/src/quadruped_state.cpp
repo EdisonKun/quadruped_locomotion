@@ -129,18 +129,20 @@ const Position QuadrupedState::getPositionWorldToFootInWorldFrame(const LimbEnum
   Position foot_in_base, base_in_world;
   //  setCurrentLimbJoints(joint_positions_);
   foot_in_base = getPositionBaseToFootInBaseFrame(limb);
+  std::cout << "foot in base is " << foot_in_base << std::endl;
   base_in_world = poseInWorldFrame_.getPosition();
+  std::cout << "base in world is " << base_in_world << std::endl;
   return poseInWorldFrame_.getRotation().rotate(foot_in_base) + base_in_world;//poseInWorldFrame_.getPosition() + getPositionWorldToFootInWorldFrame(limb);
 }
 const Position QuadrupedState::getPositionBaseToFootInBaseFrame(const LimbEnum& limb)
 {
   //  std::cout<<"get here"<<std::endl;
   JointPositionsLimb jointPositions = current_limb_joints_.at(limb);
-  //  std::cout<<"in getPositionBaseToFootInBaseFrame() jointPositions  "<<jointPositions<<std::endl;
+    std::cout<<"in getPositionBaseToFootInBaseFrame() jointPositions  "<<jointPositions<<std::endl;
   Pose foot_pose;
   FowardKinematicsSolve(jointPositions, limb, foot_pose);
   footPoseInBaseFrame_[limb] = foot_pose;
-  //  std::cout<<"in getPositionBaseToFootInBaseFrame()  "<<foot_pose.getPosition()<<std::endl;
+    std::cout<<"in getPositionBaseToFootInBaseFrame()  "<<foot_pose.getPosition()<<std::endl;
   return foot_pose.getPosition();
 }
 

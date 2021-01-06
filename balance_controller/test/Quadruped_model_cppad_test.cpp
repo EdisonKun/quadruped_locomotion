@@ -28,14 +28,14 @@ public:
         std::vector<free_gait::BranchEnum> branches_;
         limbs_.push_back(free_gait::LimbEnum::LF_LEG);
         limbs_.push_back(free_gait::LimbEnum::RF_LEG);
-        limbs_.push_back(free_gait::LimbEnum::LH_LEG);
         limbs_.push_back(free_gait::LimbEnum::RH_LEG);
+        limbs_.push_back(free_gait::LimbEnum::LH_LEG);
 
         branches_.push_back(free_gait::BranchEnum::BASE);
         branches_.push_back(free_gait::BranchEnum::LF_LEG);
         branches_.push_back(free_gait::BranchEnum::RF_LEG);
-        branches_.push_back(free_gait::BranchEnum::LH_LEG);
         branches_.push_back(free_gait::BranchEnum::RH_LEG);
+        branches_.push_back(free_gait::BranchEnum::LH_LEG);
 
 
         Robot_state->initialize(limbs_, branches_);
@@ -53,7 +53,7 @@ public:
         quadKinCPPAD.PrepareLegLoading();
 
         quadKinCPPAD.Angles_Torques_Initial(x);
-        quadKinCPPAD.Store_Foot_Position();
+        quadKinCPPAD.Store_Foot_Position_In_Baseframe();
         quadKinCPPAD.PrepareOptimization();
 
         Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> A_, jac_;
@@ -86,7 +86,7 @@ public:
         Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> final;
         final.resize(6,1);
         std::cout << "calculate the final" <<std::endl;
-        final = A_ * jac_ * torques;
+        final = A_ * jac_ * torques;//base force
         std::cout << "final is " << std::endl;
         for (unsigned int i = 0; i < final.rows();i++) {
             for (unsigned int j = 0; j < final.cols(); j++) {
@@ -99,6 +99,30 @@ public:
             fg[i + 1] = final(i,0);
         }
 
+        //add leg force, the force in the z direction should be bigger than zero?nope, smaller than zero;
+        std::vector<Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic>> foot_force;
+        foot_force.resize(4);
+        for (unsigned int i = 0; i < 4; i++) {
+            foot_force.at(i).resize(3,1);
+            foot_force.at(i) = Eigen::Matrix<CppAD::AD<double>, 12, 1>(jac_ * torques).segment(3 * i, 3 * i + 3);//all leg force;
+            fg[8 + i] = foot_force.at(i)(2,0);
+        }
+
+        //get the foot position in the world frame;
+        std::cout << "the lf foot position is" << Robot_state->getPositionWorldToFootInWorldFrame(free_gait::LimbEnum::LF_LEG);
+
+        std::cout << "foot position is: " << " ";
+        for (unsigned int i = 0; i < 3; i++) {
+            std::cout << quadKinCPPAD.Get_foot_position_In_Baseframe(free_gait::LimbEnum::LF_LEG)[i] << " ";
+        }
+        std::cout << std::endl;
+
+//        quadKinCPPAD.GetFootPositionInWorldframe(free_gait::LimbEnum::LF_LEG);
+        quadKinCPPAD.StoreFootPositionInWorldframe();
+
+
+
+
     }
 };
 }
@@ -110,39 +134,51 @@ int main(int argc, char *argv[])
     size_t nx = 24;
     Dvector xi(nx);
     Dvector xl(nx),xu(nx);
-    for (unsigned int i = 0; i < nx; i++) {
-        xi[i] = 0.1;
-        if(i < nx/2)
-        {
-            xu[0] = 0.7; xl[0] = -xu[0];
-            xu[1] = 1; xl[1] = -xu[1];
-            xu[2] = 1.2; xl[2] = -xu[2];
-            xu[3] = 0.7; xl[3] = -xu[3];
-            xu[4] = 1; xl[4] = -xu[4];
-            xu[5] = 1.2; xl[5] = -xu[5];
-            xu[6] = 0.7; xl[6] = -xu[6];
-            xu[7] = 1; xl[7] = -xu[7];
-            xu[8] = 1.2; xl[8] = -xu[8];
-            xu[9] = 0.7; xl[9] = -xu[9];
-            xu[10] = 1; xl[10] = -xu[10];
-            xu[11] = 1.2; xl[11] = -xu[11];
+    xi[0] = 0;
+    xi[1] = 1.4;
+    xi[2] = -2.4;
+    xi[3] = 0;
+    xi[4] = -1.4;
+    xi[5] = 2.4;
+    xi[6] = 0;
+    xi[7] = 1.4;
+    xi[8] = -2.4;
+    xi[9] = 0;
+    xi[10] = -1.4;
+    xi[11] = 2.4;
 
-        }else {
-            xu[i] = 65;
-            xl[i] = - xu[i];
-        }
-
+    //avoid the singlarity point;
+    xu[0] = 0.65; xl[0] = -xu[0];
+    xu[1] = 2;    xl[1] = -xu[1];
+    xu[2] = -0.1; xl[2] = -3;
+    xu[3] = 0.65; xl[3] = -xu[3];
+    xu[4] = 2;    xl[4] = -xu[4];
+    xu[5] = 3;    xl[5] = 0.1;
+    xu[6] = 0.65; xl[6] = -xu[6];
+    xu[7] = 2;    xl[7] = -xu[7];
+    xu[8] = -0.1; xl[8] = -3;
+    xu[9] = 0.65; xl[9] = -xu[9];
+    xu[10] = 2;   xl[10]= - xu[10];
+    xu[11] = 3;   xl[11]= 0.1;
+    for (unsigned int i = nx/2; i < nx; i++) {
+        xu[i] = 65;
+        xl[i] = - xu[i];
     }
-    size_t con_num = 6;
+    size_t con_num = 10;//constraint number
     Dvector gl(con_num), gu(con_num);
     for (unsigned int i = 0; i < 2; i++) {
-        gl[i] = -100;
-        gu[i] = 100;
+        gl[i] = -50;
+        gu[i] = 50;
     }
-    gl[2] = 600;gu[2] = 600;
+    gl[2] = -600;gu[2] = -600;//force in the z direction;
     gl[3] = 0;gu[3] = 0;
     gl[4] = 0;gu[4] = 0;
     gl[5] = 0;gu[5] = 0;
+
+    gl[6] = -1.0e5;gu[6] = 0;
+    gl[7] = -1.0e5;gu[7] = 0;
+    gl[8] = -1.0e5;gu[8] = 0;
+    gl[9] = -1.0e5;gu[9] = 0;
 
     FG_eval fg_eval;
 
@@ -151,11 +187,11 @@ int main(int argc, char *argv[])
     options += "Integer print_level  1\n";
     options += "String  sb           yes\n";
     // maximum number of iterations
-    options += "Integer max_iter     20000\n";
+    options += "Integer max_iter     2000000\n";
     // approximate accuracy in first order necessary conditions;
     // see Mathematical Programming, Volume 106, Number 1,
     // Pages 25-57, Equation (6)
-    options += "Numeric tol          1e-6\n";
+    options += "Numeric tol          1e-3\n";
     // derivative testing
     options += "String  derivative_test            second-order\n";
     // maximum amount of random pertubation; e.g.,
@@ -178,14 +214,14 @@ int main(int argc, char *argv[])
     std::vector<free_gait::BranchEnum> branches_;
     limbs_.push_back(free_gait::LimbEnum::LF_LEG);
     limbs_.push_back(free_gait::LimbEnum::RF_LEG);
-    limbs_.push_back(free_gait::LimbEnum::LH_LEG);
     limbs_.push_back(free_gait::LimbEnum::RH_LEG);
+    limbs_.push_back(free_gait::LimbEnum::LH_LEG);
 
     branches_.push_back(free_gait::BranchEnum::BASE);
     branches_.push_back(free_gait::BranchEnum::LF_LEG);
     branches_.push_back(free_gait::BranchEnum::RF_LEG);
-    branches_.push_back(free_gait::BranchEnum::LH_LEG);
     branches_.push_back(free_gait::BranchEnum::RH_LEG);
+    branches_.push_back(free_gait::BranchEnum::LH_LEG);
 
 
     Robot_state->initialize(limbs_, branches_);
@@ -206,7 +242,7 @@ int main(int argc, char *argv[])
     quadruped_model::Quad_Kin_CppAD quadKinCPPAD(Robot_state);
     quadKinCPPAD.PrepareLegLoading();
     quadKinCPPAD.Angles_Torques_Initial(x_veri);
-    quadKinCPPAD.Store_Foot_Position();
+    quadKinCPPAD.Store_Foot_Position_In_Baseframe();
     quadKinCPPAD.PrepareOptimization();
 
     Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> A_, jac_;
@@ -219,11 +255,27 @@ int main(int argc, char *argv[])
     for (unsigned int i = 0; i < x_veri.size()/2; i++) {
         torques(i,0) = x_veri[i+12];
     }
+
+    std::cout << "matrix A is " << std::endl;
+    for (unsigned int i = 0; i < A_.rows();i++) {
+        for (unsigned int j = 0; j < A_.cols(); j++) {
+            std::cout << A_(i,j) << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    std::cout << "jac_ is " << std::endl;
+    for (unsigned int i = 0; i < jac_.rows();i++) {
+        for (unsigned int j = 0; j < jac_.cols(); j++) {
+            std::cout << jac_(i,j) << " ";
+        }
+        std::cout << std::endl;
+    }
     Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> final;
     final.resize(6,1);
     std::cout << "calculate the final" <<std::endl;
-    final = A_ * jac_ * torques;
-    std::cout << "final is " << std::endl;
+    final = A_ * jac_ * torques;//base force
+    std::cout << "the base force is " << std::endl;
     for (unsigned int i = 0; i < final.rows();i++) {
         for (unsigned int j = 0; j < final.cols(); j++) {
             std::cout << final(i,j) << " ";
@@ -231,13 +283,15 @@ int main(int argc, char *argv[])
         std::cout << std::endl;
     }
 
-    final = jac_ * torques;
-    std::cout << "final 2 is " << std::endl;
+    final = jac_ * torques;//foot force;
+    std::cout << "the foot force is " << std::endl;
+
     for (unsigned int i = 0; i < final.rows();i++) {
         for (unsigned int j = 0; j < final.cols(); j++) {
             std::cout << final(i,j) << " ";
         }
         std::cout << std::endl;
     }
+
     return 0;
 }

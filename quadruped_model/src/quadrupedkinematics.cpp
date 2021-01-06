@@ -581,13 +581,14 @@ bool QuadrupedKinematics::InverseKinematicsSolve(const Position& foot_position, 
                                                  JointPositionsLimb& joint_positions,
                                                  const std::string LimbType)
 {
+    std::cout << "***************" << std::endl;
   double d,l1,l2,px,py,pz,alpha,beta1,beta2;
   d=0.23;
   l1=0.308;
   l2=0.308;
-//  cout<<"px in base = "<<foot_position(0)<<endl
-//      <<"py in base = "<<foot_position(1)<<endl
-//      <<"pz in base = "<<foot_position(2)<<endl;
+  cout<<"px in base = "<<foot_position(0)<<endl
+      <<"py in base = "<<foot_position(1)<<endl
+      <<"pz in base = "<<foot_position(2)<<endl;
   Position foot_position_in_hip = getPositionFootToHipInHipFrame(limb, foot_position);
 //  std::cout << "limb type is "<< foot_position_in_hip <<std::endl;
   px=foot_position_in_hip(0);
@@ -673,8 +674,8 @@ bool QuadrupedKinematics::InverseKinematicsSolve(const Position& foot_position, 
   if(LimbType == "OUT_RIGHT")
     min_index = 3;
 
-  joint_positions << results(min_index,0),results(min_index,1),results(min_index,2);
-//  cout<<results<<endl;
+//  joint_positions << results(min_index,0),results(min_index,1),results(min_index,2);
+  joint_positions.setRandom();
 
   if(!isnan(joint_positions(0))&&!isnan(joint_positions(1))&&!isnan(joint_positions(2))){
       return true;

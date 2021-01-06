@@ -31,10 +31,13 @@ Quad_Kin_CppAD::~Quad_Kin_CppAD()
 void Quad_Kin_CppAD::Angles_Torques_Initial(const ADvector& x)
 {
     std::cout << "initial angles and torques" << std::endl;
+    JointPositions all_joint_positions;
     for (unsigned int i = 0; i < x.size(); i++) {
         angles_(i,0) = x[i];
         torques_(i,0) = x[i + x.size() / 2];
+        all_joint_positions(i) =CppAD::Value(x[i]);
     }
+    robot_state_->setJointPositions(all_joint_positions);
 }
 
 template<typename T, int rows, int cols>
@@ -48,39 +51,37 @@ void Quad_Kin_CppAD::Matrix_Printf(const Eigen::Matrix<T, rows, cols>& matrix)
     }
 }
 
-void Quad_Kin_CppAD::Store_Foot_Position()
+void Quad_Kin_CppAD::Store_Foot_Position_In_Baseframe()
 {
     std::cout <<"store foot position" << std::endl;
     Eigen::Matrix<CppAD::AD<double>, 4, 4> foot_pose;
     iit::simpledog::HomogeneousTransforms motion_trans;
-    std::cout << "angles is " <<std::endl;
-    for (unsigned int i = 0; i < 12; i++) {
-        std::cout << angles_(i,0) << " ";
-    }
-    std::cout << std::endl;
+
     foot_pose = motion_trans.fr_base_X_LF_FOOT(angles_);
-    foot_position_[LimbEnum::LF_LEG] = foot_pose.block(0,3,3,1);
+    foot_position_[LimbEnum::LF_LEG].x() = foot_pose.block(0,3,3,1).x();
+    foot_position_[LimbEnum::LF_LEG].y() = foot_pose.block(0,3,3,1).y();
+    foot_position_[LimbEnum::LF_LEG].z() = foot_pose.block(0,3,3,1).z();
 
-    for (unsigned int i = 0; i < foot_pose.rows();i++) {
-        for (unsigned int j = 0; j < foot_pose.cols(); j++) {
-            std::cout << foot_pose(i,j) << " ";
-        }
-        std::cout << std::endl;
-    }
-
-    foot_pose = motion_trans.fr_base_X_RF_FOOT(angles_);
-    foot_position_[LimbEnum::RF_LEG] = foot_pose.block(0,3,3,1);
+    foot_pose = motion_trans.fr_base_X_RF_FOOT(angles_);    
+    foot_position_[LimbEnum::RF_LEG].x() = foot_pose.block(0,3,3,1).x();
+    foot_position_[LimbEnum::RF_LEG].y() = foot_pose.block(0,3,3,1).y();
+    foot_position_[LimbEnum::RF_LEG].z() = foot_pose.block(0,3,3,1).z();
 
     foot_pose = motion_trans.fr_base_X_RH_FOOT(angles_);
-    foot_position_[LimbEnum::RH_LEG] = foot_pose.block(0,3,3,1);
+    foot_position_[LimbEnum::RH_LEG].x() = foot_pose.block(0,3,3,1).x();
+    foot_position_[LimbEnum::RH_LEG].y() = foot_pose.block(0,3,3,1).y();
+    foot_position_[LimbEnum::RH_LEG].z() = foot_pose.block(0,3,3,1).z();
+
 
     foot_pose = motion_trans.fr_base_X_LH_FOOT(angles_);
-    foot_position_[LimbEnum::LH_LEG] = foot_pose.block(0,3,3,1);
+    foot_position_[LimbEnum::LH_LEG].x() = foot_pose.block(0,3,3,1).x();
+    foot_position_[LimbEnum::LH_LEG].y() = foot_pose.block(0,3,3,1).y();
+    foot_position_[LimbEnum::LH_LEG].z() = foot_pose.block(0,3,3,1).z();
 }
 
-Eigen::Matrix<CppAD::AD<double>, 3, 1> Quad_Kin_CppAD::Get_foot_position(const LimbEnum& limb)
+const Position_cppad Quad_Kin_CppAD::Get_foot_position_In_Baseframe(const LimbEnum& limb)
 {
-    std::cout << "Get_foot_position" << std::endl;
+    std::cout << "Get_foot_position of " << int(limb) << " leg" << std::endl;
     return foot_position_[limb];
 }
 
@@ -122,7 +123,7 @@ void Quad_Kin_CppAD::PrepareOptimization()
     for (auto& legInfo : legInfos_) {
         if (legInfo.second.isPartOfForceDistribution_)
         {
-            foot_posi = Get_foot_position(legInfo.first);
+            foot_posi = Get_foot_position_In_Baseframe(legInfo.first);
 //            std::cout << "foot_posi is "<< std::endl;
 //            for (unsigned int i = 0; i < 3; i++) {
 //                std::cout << foot_posi(i,0) << " ";
@@ -145,6 +146,7 @@ void Quad_Kin_CppAD::PrepareOptimization()
     //calculate the jacobian.inverse
     Store_the_jacobians();
     Jacobians_.resize(3 * nLegsInForceDistributuion_, 3 * nLegsInForceDistributuion_);
+    Jacobians_.setZero();
     for (auto& legInfo : legInfos_) {
         if(legInfo.second.isPartOfForceDistribution_)
         {
@@ -163,23 +165,19 @@ void Quad_Kin_CppAD::Store_the_jacobians()
     Eigen::Matrix<CppAD::AD<double>, 6, 3> jac63;
 
     jac63 = jac.fr_base_J_LF_FOOT(angles_);
-    jac33 = jac63.block(3,0,3,3);
-    jac33 = jac33.transpose().inverse();
+    jac33 = jac63.block(3,0,3,3).transpose().inverse();
     foot_jacobians_[LimbEnum::LF_LEG] = jac33;
 
     jac63 = jac.fr_base_J_RF_FOOT(angles_);
-    jac33 = jac63.block(3,0,3,3);
-    jac33 = jac33.transpose().inverse();
+    jac33 = jac63.block(3,0,3,3).transpose().inverse();
     foot_jacobians_[LimbEnum::RF_LEG] = jac33;
 
     jac63 = jac.fr_base_J_RH_FOOT(angles_);
-    jac33 = jac63.block(3,0,3,3);
-    jac33 = jac33.transpose().inverse();
+    jac33 = jac63.block(3,0,3,3).transpose().inverse();
     foot_jacobians_[LimbEnum::RH_LEG] = jac33;
 
     jac63 = jac.fr_base_J_LH_FOOT(angles_);
-    jac33 = jac63.block(3,0,3,3);
-    jac33 = jac33.transpose().inverse();
+    jac33 = jac63.block(3,0,3,3).transpose().inverse();
     foot_jacobians_[LimbEnum::LH_LEG] = jac33;
 }
 
@@ -193,6 +191,17 @@ Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> Quad_Kin_CppAD:
 {
     std::cout << "get the matrix A" << std::endl;
     return A_;
+}
+
+void Quad_Kin_CppAD::SetBaseInWorld(const Pose_cppad &base_pose)
+{
+    base_to_world_ = base_pose;
+}
+
+const Position_cppad Quad_Kin_CppAD::GetFootPositionInWorldframe(const LimbEnum& limb)
+{
+    Position_cppad foot_in_base, base_in_world;
+    foot_in_base = Get_foot_position_In_Baseframe(limb);
 }
 
 }//namespace

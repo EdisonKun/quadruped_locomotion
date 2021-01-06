@@ -24,7 +24,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "send_joint_angle");
     ros::NodeHandle nh;
     ros::Publisher joint_pub = nh.advertise<sensor_msgs::JointState>("/joint_states", 1000);
-    ros::Rate loop_rate(1000);
+    ros::Rate loop_rate(200);
     sensor_msgs::JointState joint_state;
 
     joint_state.header.frame_id = "base_link";
@@ -45,7 +45,7 @@ int main(int argc, char **argv)
 
     std::ifstream readfile;
 //    readfile.open("/home/kun/catkin_ws_dependency/15_walk_and_kneel_down_read.txt");
-    readfile.open("/home/kun/catkin_ws_dependency/catch_a_ball_read.txt");
+    readfile.open("/home/kun/catkin_ws_dependency/throw_a_ball_read.txt");
 
     quadruped_model::JointPositions joint_position_file;
     std::vector<quadruped_model::JointPositions> joint_position_collection;
@@ -78,10 +78,10 @@ int main(int argc, char **argv)
 
         }
         i = i + 1;
-        if(i == joint_position_collection.size() - 1)
-        {
-            i = 0;
-        }
+//        if(i == joint_position_collection.size() - 1)
+//        {
+//            i = 0;
+//        }
         ros::spinOnce();
         loop_rate.sleep();
     }

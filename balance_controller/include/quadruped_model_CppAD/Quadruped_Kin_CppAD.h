@@ -9,10 +9,15 @@
 #include "memory"//ptr
 #include "unordered_map"
 #include "utility"
+
+#include "kindr/Core"
 namespace quadruped_model
 {
 typedef CPPAD_TESTVECTOR(CppAD::AD<double>) ADvector;
 typedef Eigen::Matrix<CppAD::AD<double>,3,1> Force;
+typedef kindr::HomTransformQuat<CppAD::AD<double>> Pose_cppad;
+typedef kindr::RotationQuaternion<CppAD::AD<double>> RotationQuaternion_cppad;
+typedef kindr::Position<CppAD::AD<double>,3> Position_cppad;
 class Quad_Kin_CppAD
 {
 public:
@@ -47,19 +52,30 @@ public:
      * @param angles
      * Get all foot position w.r.t base;
      */
-    void Store_Foot_Position();
+    void Store_Foot_Position_In_Baseframe();
 
     /**
-     * @brief Get_foot_position
+     * @brief Get_foot_position w.r.t base frame;
      * @param leg_num
      * @return leg num corresponding position
      */
-    Eigen::Matrix<CppAD::AD<double>, 3, 1> Get_foot_position(const LimbEnum& limb);
+    const Position_cppad Get_foot_position_In_Baseframe(const LimbEnum& limb);
+
+    /**
+     * @brief StoreFootPositionInWorldframe
+     */
+    const Position_cppad GetFootPositionInWorldframe(const LimbEnum& limb);
+
+    /**
+     * @brief SetBaseInWorld
+     * get the transformation to express the base in the world frame;
+     */
+    void SetBaseInWorld(const Pose_cppad& base_pose);
 
     /**
      * @brief PrepareaOptimization
      * calculate all the jacobian.inverse, matrix A in CppAD verrsion, full it into matrix;
-     */
+     */    
     void PrepareOptimization();
 
     /**
@@ -89,10 +105,11 @@ public:
     Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> GetAMatrix();
 
 
+
+
 public:
     std::map<free_gait::LimbEnum, LEGINFO> legInfos_;
-    typedef  Eigen::Matrix<CppAD::AD<double>, 3, 1> foot_posi;
-    std::map<free_gait::LimbEnum, foot_posi> foot_position_;
+    std::map<free_gait::LimbEnum, Position_cppad> foot_position_;
 
     typedef  Eigen::Matrix<CppAD::AD<double>, 3, 3> jac_33_;
     std::map<free_gait::LimbEnum, jac_33_> foot_jacobians_;
@@ -109,6 +126,12 @@ private:
     int nLegsInForceDistributuion_;
     int n_;// the matrix size or the matrix A size;
     Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> A_;
+
+    Pose_cppad base_to_world_;
+
+
+
+
 };
 }//namespace
 #endif // QUADRUPEDKINEMATICS_H
