@@ -11,6 +11,7 @@
 #include "utility"
 
 #include "kindr/Core"
+#include <iostream>
 namespace quadruped_model
 {
 typedef CPPAD_TESTVECTOR(CppAD::AD<double>) ADvector;
@@ -47,12 +48,6 @@ public:
 
     void Angles_Torques_Initial(const ADvector& x);
 
-    /**
-     * @brief Get_Foot_Position
-     * @param angles
-     * Get all foot position w.r.t base;
-     */
-    void Store_Foot_Position_In_Baseframe();
 
     /**
      * @brief Get_foot_position w.r.t base frame;
@@ -104,8 +99,13 @@ public:
      */
     Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> GetAMatrix();
 
-
-
+    /**
+     *printf the eigen matrix;
+     */
+    void EigenMatrixPrintf(const Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic>& EigenMatrix);
+    void CppadPositionPrintf(const Position_cppad& position);
+    void CppadRotationPrintf(const RotationQuaternion_cppad& rotation);
+    void CppadPosePrintf(const Pose_cppad& pose);
 
 public:
     std::map<free_gait::LimbEnum, LEGINFO> legInfos_;
@@ -127,7 +127,7 @@ private:
     int n_;// the matrix size or the matrix A size;
     Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> A_;
 
-    Pose_cppad base_to_world_;
+    Pose_cppad base_pose_to_world_;
 
 
 

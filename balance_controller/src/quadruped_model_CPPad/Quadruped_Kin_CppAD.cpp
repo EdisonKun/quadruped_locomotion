@@ -9,7 +9,7 @@ The single leg optimization is in the ifopt_test_execuable.cpp in balance_contro
 namespace quadruped_model {
 Quad_Kin_CppAD::Quad_Kin_CppAD(std::shared_ptr<free_gait::State> robot_state)
     :footDof_(3),robot_state_(robot_state){
-    std::cout << "construct the quad_kin_cppad" << std::endl;
+//    std::cout << "construct the quad_kin_cppad" << std::endl;
     angles_.setOnes();
     torques_.setOnes();
     limbs_.push_back(free_gait::LimbEnum::LF_LEG);
@@ -30,7 +30,7 @@ Quad_Kin_CppAD::~Quad_Kin_CppAD()
 
 void Quad_Kin_CppAD::Angles_Torques_Initial(const ADvector& x)
 {
-    std::cout << "initial angles and torques" << std::endl;
+//    std::cout << "initial angles and torques" << std::endl;
     JointPositions all_joint_positions;
     for (unsigned int i = 0; i < x.size(); i++) {
         angles_(i,0) = x[i];
@@ -51,43 +51,35 @@ void Quad_Kin_CppAD::Matrix_Printf(const Eigen::Matrix<T, rows, cols>& matrix)
     }
 }
 
-void Quad_Kin_CppAD::Store_Foot_Position_In_Baseframe()
+const Position_cppad Quad_Kin_CppAD::Get_foot_position_In_Baseframe(const LimbEnum& limb)
 {
-    std::cout <<"store foot position" << std::endl;
     Eigen::Matrix<CppAD::AD<double>, 4, 4> foot_pose;
     iit::simpledog::HomogeneousTransforms motion_trans;
 
-    foot_pose = motion_trans.fr_base_X_LF_FOOT(angles_);
-    foot_position_[LimbEnum::LF_LEG].x() = foot_pose.block(0,3,3,1).x();
-    foot_position_[LimbEnum::LF_LEG].y() = foot_pose.block(0,3,3,1).y();
-    foot_position_[LimbEnum::LF_LEG].z() = foot_pose.block(0,3,3,1).z();
-
-    foot_pose = motion_trans.fr_base_X_RF_FOOT(angles_);    
-    foot_position_[LimbEnum::RF_LEG].x() = foot_pose.block(0,3,3,1).x();
-    foot_position_[LimbEnum::RF_LEG].y() = foot_pose.block(0,3,3,1).y();
-    foot_position_[LimbEnum::RF_LEG].z() = foot_pose.block(0,3,3,1).z();
-
-    foot_pose = motion_trans.fr_base_X_RH_FOOT(angles_);
-    foot_position_[LimbEnum::RH_LEG].x() = foot_pose.block(0,3,3,1).x();
-    foot_position_[LimbEnum::RH_LEG].y() = foot_pose.block(0,3,3,1).y();
-    foot_position_[LimbEnum::RH_LEG].z() = foot_pose.block(0,3,3,1).z();
-
-
-    foot_pose = motion_trans.fr_base_X_LH_FOOT(angles_);
-    foot_position_[LimbEnum::LH_LEG].x() = foot_pose.block(0,3,3,1).x();
-    foot_position_[LimbEnum::LH_LEG].y() = foot_pose.block(0,3,3,1).y();
-    foot_position_[LimbEnum::LH_LEG].z() = foot_pose.block(0,3,3,1).z();
-}
-
-const Position_cppad Quad_Kin_CppAD::Get_foot_position_In_Baseframe(const LimbEnum& limb)
-{
-    std::cout << "Get_foot_position of " << int(limb) << " leg" << std::endl;
+    switch (limb) {
+    case LimbEnum::LF_LEG:
+        foot_pose = motion_trans.fr_base_X_LF_FOOT(angles_);
+        foot_position_[LimbEnum::LF_LEG].vector() = foot_pose.block(0,3,3,1);
+        break;
+    case LimbEnum::RF_LEG:
+        foot_pose = motion_trans.fr_base_X_RF_FOOT(angles_);
+        foot_position_[LimbEnum::RF_LEG].vector() = foot_pose.block(0,3,3,1);
+        break;
+    case LimbEnum::RH_LEG:
+        foot_pose = motion_trans.fr_base_X_RH_FOOT(angles_);
+        foot_position_[LimbEnum::RH_LEG].vector() = foot_pose.block(0,3,3,1);
+    case LimbEnum::LH_LEG:
+        foot_pose = motion_trans.fr_base_X_LH_FOOT(angles_);
+        foot_position_[LimbEnum::LH_LEG].vector() = foot_pose.block(0,3,3,1);
+        break;
+    }
     return foot_position_[limb];
 }
 
+
 bool Quad_Kin_CppAD::PrepareLegLoading()
 {
-    std::cout << "PrepareLegLoading" << std::endl;
+//    std::cout << "PrepareLegLoading" << std::endl;
     nLegsInForceDistributuion_ = 0;
     for (auto& leginfo : legInfos_) {
         if(robot_state_->isSupportLeg(leginfo.first))
@@ -108,27 +100,22 @@ bool Quad_Kin_CppAD::PrepareLegLoading()
 
 void Quad_Kin_CppAD::PrepareOptimization()
 {
-    std::cout << "PrepareOptimization" << std::endl;
+//    std::cout << "PrepareOptimization" << std::endl;
     n_ = footDof_ * nLegsInForceDistributuion_;//3 * nlegs support;
     A_.resize(6,n_);
     A_.setZero();
     Eigen::Matrix<CppAD::AD<double>,3,3> I_matrix;
     I_matrix.setIdentity();
     A_.middleRows(0, footDof_) = I_matrix.replicate(1, nLegsInForceDistributuion_);
-    std::cout << "success get the A_" << std::endl;
+//    std::cout << "success get the A_" << std::endl;
 
     Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> A_bottomMatrix(3,n_);
     Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> foot_skew(3, 3);
-    Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> foot_posi(3, 1);
+    Position_cppad foot_posi;
     for (auto& legInfo : legInfos_) {
         if (legInfo.second.isPartOfForceDistribution_)
         {
             foot_posi = Get_foot_position_In_Baseframe(legInfo.first);
-//            std::cout << "foot_posi is "<< std::endl;
-//            for (unsigned int i = 0; i < 3; i++) {
-//                std::cout << foot_posi(i,0) << " ";
-//            }
-//            std::cout << std::endl;
             foot_skew(0,0) = 0;
             foot_skew(0,1) = -foot_posi(2,0);
             foot_skew(0,2) = foot_posi(1,0);
@@ -154,12 +141,12 @@ void Quad_Kin_CppAD::PrepareOptimization()
                 foot_jacobians_[legInfo.first];
         }
     }
-    std::cout << "success get the jacobians" << std::endl;
+//    std::cout << "success get the jacobians" << std::endl;
 }
 
 void Quad_Kin_CppAD::Store_the_jacobians()
 {
-    std::cout << "Store_the_jacobians" << std::endl;
+//    std::cout << "Store_the_jacobians" << std::endl;
     iit::simpledog::Jacobians jac;
     Eigen::Matrix<CppAD::AD<double>, 3, 3> jac33;
     Eigen::Matrix<CppAD::AD<double>, 6, 3> jac63;
@@ -183,25 +170,71 @@ void Quad_Kin_CppAD::Store_the_jacobians()
 
 Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> Quad_Kin_CppAD::GetFootJacobian()
 {
-    std::cout << "get the jacobian_" << std::endl;
+//    std::cout << "get the jacobian_" << std::endl;
     return Jacobians_;
 }
 
 Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> Quad_Kin_CppAD::GetAMatrix()
 {
-    std::cout << "get the matrix A" << std::endl;
+//    std::cout << "get the matrix A" << std::endl;
     return A_;
 }
 
 void Quad_Kin_CppAD::SetBaseInWorld(const Pose_cppad &base_pose)
 {
-    base_to_world_ = base_pose;
+    base_pose_to_world_ = base_pose;
 }
 
 const Position_cppad Quad_Kin_CppAD::GetFootPositionInWorldframe(const LimbEnum& limb)
 {
     Position_cppad foot_in_base, base_in_world;
     foot_in_base = Get_foot_position_In_Baseframe(limb);
+    base_in_world = base_pose_to_world_.getPosition();
+    return base_pose_to_world_.getRotation().rotate(foot_in_base) + base_in_world;
 }
+
+void Quad_Kin_CppAD::EigenMatrixPrintf(const Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic>& EigenMatrix)
+{
+    Eigen::IOFormat OctaveFmt(4, 0, ", ", ";\n", "", "", "[", "]");
+    Eigen::MatrixXd temp_matrix;
+    temp_matrix.resize(EigenMatrix.rows(),EigenMatrix.cols());
+    for (unsigned int i = 0; i < EigenMatrix.rows(); i++) {
+        for (int var = 0; var < EigenMatrix.cols(); ++var) {
+            temp_matrix(i,var) = CppAD::Value(EigenMatrix(i,var));
+        }
+    }
+    std::cout << temp_matrix.format(OctaveFmt) << std::endl;
+}
+
+void Quad_Kin_CppAD::CppadPositionPrintf(const Position_cppad &position)
+{
+    Eigen::IOFormat OctaveFmt(4, 0, ", ", ";\n", "", "", "[", "]");
+    Eigen::MatrixXd temp_matrix;
+    temp_matrix.resize(1,3);
+    temp_matrix(0,0) = CppAD::Value(position.x());
+    temp_matrix(0,1) = CppAD::Value(position.y());
+    temp_matrix(0,2) = CppAD::Value(position.z());
+    std::cout << temp_matrix.format(OctaveFmt) << std::endl;
+}
+
+void Quad_Kin_CppAD::CppadRotationPrintf(const RotationQuaternion_cppad &rotation)
+{
+    Eigen::IOFormat OctaveFmt(4, 0, ", ", ";\n", "", "", "[", "]");
+    Eigen::MatrixXd temp_matrix;
+    temp_matrix.resize(1,4);
+    temp_matrix(0,1) = CppAD::Value(rotation.x());
+    temp_matrix(0,2) = CppAD::Value(rotation.y());
+    temp_matrix(0,3) = CppAD::Value(rotation.z());
+    temp_matrix(0,0) = CppAD::Value(rotation.w());
+    std::cout << temp_matrix.format(OctaveFmt) << std::endl;
+}
+
+void Quad_Kin_CppAD::CppadPosePrintf(const Pose_cppad &pose)
+{
+    CppadPositionPrintf(pose.getPosition());
+    CppadRotationPrintf(pose.getRotation());
+}
+
+
 
 }//namespace

@@ -53,51 +53,32 @@ public:
         quadKinCPPAD.PrepareLegLoading();
 
         quadKinCPPAD.Angles_Torques_Initial(x);
-        quadKinCPPAD.Store_Foot_Position_In_Baseframe();
         quadKinCPPAD.PrepareOptimization();
 
         Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> A_, jac_;
         A_ = quadKinCPPAD.GetAMatrix();
         jac_ = quadKinCPPAD.GetFootJacobian();
 
-        std::cout << "matrix A is " << std::endl;
-        for (unsigned int i = 0; i < A_.rows();i++) {
-            for (unsigned int j = 0; j < A_.cols(); j++) {
-                std::cout << A_(i,j) << " ";
-            }
-            std::cout << std::endl;
-        }
-
-        std::cout << "jac_ is " << std::endl;
-        for (unsigned int i = 0; i < jac_.rows();i++) {
-            for (unsigned int j = 0; j < jac_.cols(); j++) {
-                std::cout << jac_(i,j) << " ";
-            }
-            std::cout << std::endl;
-        }
+        quadKinCPPAD.EigenMatrixPrintf(A_);
 
         Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> torques;
         torques.resize(12,1);
 
-        for (unsigned int i = 0; i < x.size()/2; i++) {
+        for (unsigned int i = 0; i < 12; i++) {
             fg[0] = fg[0] + x[i+12] * x[i+12];
             torques(i,0) = x[i+12];
         }
+
+        CppAD::AD<double> base_z;
+        base_z = x[24];
+
         Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> final;
         final.resize(6,1);
-        std::cout << "calculate the final" <<std::endl;
         final = A_ * jac_ * torques;//base force
-        std::cout << "final is " << std::endl;
-        for (unsigned int i = 0; i < final.rows();i++) {
-            for (unsigned int j = 0; j < final.cols(); j++) {
-                std::cout << final(i,j) << " ";
-            }
-            std::cout << std::endl;
-        }
 
         for (unsigned int i = 0; i < 6; i++) {
             fg[i + 1] = final(i,0);
-        }
+        }//1~6
 
         //add leg force, the force in the z direction should be bigger than zero?nope, smaller than zero;
         std::vector<Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic>> foot_force;
@@ -105,23 +86,31 @@ public:
         for (unsigned int i = 0; i < 4; i++) {
             foot_force.at(i).resize(3,1);
             foot_force.at(i) = Eigen::Matrix<CppAD::AD<double>, 12, 1>(jac_ * torques).segment(3 * i, 3 * i + 3);//all leg force;
-            fg[8 + i] = foot_force.at(i)(2,0);
-        }
+            fg[7 + i] = foot_force.at(i)(2,0);
+        }//7~10
 
-        //get the foot position in the world frame;
-        std::cout << "the lf foot position is" << Robot_state->getPositionWorldToFootInWorldFrame(free_gait::LimbEnum::LF_LEG);
+        //add foot position constraints;
 
-        std::cout << "foot position is: " << " ";
-        for (unsigned int i = 0; i < 3; i++) {
-            std::cout << quadKinCPPAD.Get_foot_position_In_Baseframe(free_gait::LimbEnum::LF_LEG)[i] << " ";
-        }
-        std::cout << std::endl;
+        quadruped_model::Pose_cppad basepose_cppad;
+        basepose_cppad.getPosition() << 0,0,base_z;
+        basepose_cppad.getRotation().setIdentity();
+        quadKinCPPAD.SetBaseInWorld(basepose_cppad);
 
-//        quadKinCPPAD.GetFootPositionInWorldframe(free_gait::LimbEnum::LF_LEG);
-        quadKinCPPAD.StoreFootPositionInWorldframe();
+        fg[11] = quadKinCPPAD.GetFootPositionInWorldframe(free_gait::LimbEnum::LF_LEG).x();
+        fg[12] = quadKinCPPAD.GetFootPositionInWorldframe(free_gait::LimbEnum::LF_LEG).y();
+        fg[13] = quadKinCPPAD.GetFootPositionInWorldframe(free_gait::LimbEnum::LF_LEG).z();
 
+        fg[14] = quadKinCPPAD.GetFootPositionInWorldframe(free_gait::LimbEnum::RF_LEG).x();
+        fg[15] = quadKinCPPAD.GetFootPositionInWorldframe(free_gait::LimbEnum::RF_LEG).y();
+        fg[16] = quadKinCPPAD.GetFootPositionInWorldframe(free_gait::LimbEnum::RF_LEG).z();
 
+        fg[17] = quadKinCPPAD.GetFootPositionInWorldframe(free_gait::LimbEnum::RH_LEG).x();
+        fg[18] = quadKinCPPAD.GetFootPositionInWorldframe(free_gait::LimbEnum::RH_LEG).y();
+        fg[19] = quadKinCPPAD.GetFootPositionInWorldframe(free_gait::LimbEnum::RH_LEG).z();
 
+        fg[20] = quadKinCPPAD.GetFootPositionInWorldframe(free_gait::LimbEnum::LH_LEG).x();
+        fg[21] = quadKinCPPAD.GetFootPositionInWorldframe(free_gait::LimbEnum::LH_LEG).y();
+        fg[22] = quadKinCPPAD.GetFootPositionInWorldframe(free_gait::LimbEnum::LH_LEG).z();
 
     }
 };
@@ -131,7 +120,7 @@ public:
 int main(int argc, char *argv[])
 {
     typedef CPPAD_TESTVECTOR(double) Dvector;
-    size_t nx = 24;
+    size_t nx = 25;
     Dvector xi(nx);
     Dvector xl(nx),xu(nx);
     xi[0] = 0;
@@ -160,25 +149,68 @@ int main(int argc, char *argv[])
     xu[9] = 0.65; xl[9] = -xu[9];
     xu[10] = 2;   xl[10]= - xu[10];
     xu[11] = 3;   xl[11]= 0.1;
-    for (unsigned int i = nx/2; i < nx; i++) {
+    for (unsigned int i = 12; i < 24; i++) {
         xu[i] = 65;
         xl[i] = - xu[i];
+        xi[i] = 2;
     }
-    size_t con_num = 10;//constraint number
+
+    xi[24] = 0.0;
+    xu[24] = 0.3; xl[24] = 0.0;
+
+
+    size_t con_num = 10 + 12;//constraint number
     Dvector gl(con_num), gu(con_num);
     for (unsigned int i = 0; i < 2; i++) {
-        gl[i] = -50;
-        gu[i] = 50;
+        gl[i] = -10;
+        gu[i] = 10;
     }
     gl[2] = -600;gu[2] = -600;//force in the z direction;
-    gl[3] = 0;gu[3] = 0;
-    gl[4] = 0;gu[4] = 0;
-    gl[5] = 0;gu[5] = 0;
+    gl[3] = 0;gu[3] = 0;//roll
+    gl[4] = 0;gu[4] = 0;//yaw
+    gl[5] = 0;gu[5] = 0;//pitch
 
-    gl[6] = -1.0e5;gu[6] = 0;
+    gl[6] = -1.0e5;gu[6] = 0;//force direction
     gl[7] = -1.0e5;gu[7] = 0;
     gl[8] = -1.0e5;gu[8] = 0;
     gl[9] = -1.0e5;gu[9] = 0;
+
+//        gl[6] = 0;gu[6] = 1.0e5;//force direction
+//        gl[7] = 0;gu[7] = 1.0e5;
+//        gl[8] = 0;gu[8] = 1.0e5;
+//        gl[9] = 0;gu[9] = 1.0e5;
+
+    //calculate the current foot position in the world frame;
+
+
+    iit::simpledog::JointState joint_angles;
+    joint_angles << 0, 1.4, -2.4, 0, -1.4, 2.4, 0, 1.4, -2.4, 0, -1.4, 2.4;
+    iit::simpledog::HomogeneousTransforms motion_trans;
+
+    quadruped_model::Position_cppad lf_foot_position;
+    lf_foot_position.vector() = motion_trans.fr_base_X_LF_FOOT(joint_angles).block(0,3,3,1);
+    gl[10] = CppAD::Value(lf_foot_position.x()); gu[10] = CppAD::Value(lf_foot_position.x());
+    gl[11] = CppAD::Value(lf_foot_position.y()); gu[11] = CppAD::Value(lf_foot_position.y());
+    gl[12] = CppAD::Value(lf_foot_position.z()); gu[12] = CppAD::Value(lf_foot_position.z());
+
+    quadruped_model::Position_cppad rf_foot_position;
+    rf_foot_position.vector() = motion_trans.fr_base_X_RF_FOOT(joint_angles).block(0,3,3,1);
+    gl[13] = CppAD::Value(rf_foot_position.x());gu[13] = CppAD::Value(rf_foot_position.x());
+    gl[14] = CppAD::Value(rf_foot_position.y());gu[14] = CppAD::Value(rf_foot_position.y());
+    gl[15] = CppAD::Value(rf_foot_position.z());gu[15] = CppAD::Value(rf_foot_position.z());
+
+
+    quadruped_model::Position_cppad rh_foot_position;
+    rh_foot_position.vector() = motion_trans.fr_base_X_RH_FOOT(joint_angles).block(0,3,3,1);
+    gl[16] = CppAD::Value(rh_foot_position.x());gu[16] = CppAD::Value(rh_foot_position.x());
+    gl[17] = CppAD::Value(rh_foot_position.y());gu[17] = CppAD::Value(rh_foot_position.y());
+    gl[18] = CppAD::Value(rh_foot_position.z());gu[18] = CppAD::Value(rh_foot_position.z());
+
+    quadruped_model::Position_cppad lh_foot_position;
+    lh_foot_position.vector() = motion_trans.fr_base_X_LH_FOOT(joint_angles).block(0,3,3,1);
+    gl[19] = CppAD::Value(lh_foot_position.x());gu[19] = CppAD::Value(lh_foot_position.x());
+    gl[20] = CppAD::Value(lh_foot_position.y());gu[20] = CppAD::Value(lh_foot_position.y());
+    gl[21] = CppAD::Value(lh_foot_position.z());gu[21] = CppAD::Value(lh_foot_position.z());
 
     FG_eval fg_eval;
 
@@ -187,7 +219,7 @@ int main(int argc, char *argv[])
     options += "Integer print_level  1\n";
     options += "String  sb           yes\n";
     // maximum number of iterations
-    options += "Integer max_iter     2000000\n";
+    options += "Integer max_iter     20000\n";
     // approximate accuracy in first order necessary conditions;
     // see Mathematical Programming, Volume 106, Number 1,
     // Pages 25-57, Equation (6)
@@ -202,10 +234,25 @@ int main(int argc, char *argv[])
 
     CppAD::ipopt::solve<Dvector, FG_eval>(options, xi, xl, xu, gl, gu, fg_eval, solution);
 
-    std::cout << "solution status is " << solution.status << std::endl;
-    for (unsigned int i = 0; i < nx; i++) {
-        std::cout << solution.x[i] << std::endl;
+    std::cout << "********solution status********" << solution.status << std::endl;
+    std::cout << "Joint angle is : " << std::endl;
+    for (unsigned int i = 0; i < 12; i++) {
+        std::cout.precision(4);
+        std::cout.width(8);
+        std::cout << solution.x[i] <<" ";
     }
+    std::cout << std::endl;
+
+    std::cout << "Joint torque is : " << std::endl;
+    for (unsigned int i = 12; i < 24; i++) {
+        std::cout.precision(4);
+        std::cout.width(8);
+        std::cout << solution.x[i] <<" ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "base position is " << solution.x[24] << std::endl;
+    std::cout << "------------------*-----------------" << std::endl;
 
     std::shared_ptr<free_gait::State> Robot_state;
     Robot_state.reset(new free_gait::State);
@@ -232,7 +279,7 @@ int main(int argc, char *argv[])
 
 
     typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
-    ADvector x_veri(24);
+    ADvector x_veri(25);
 
     for (unsigned int i = 0; i < nx; i++) {
         x_veri[i] = solution.x[i];
@@ -242,8 +289,13 @@ int main(int argc, char *argv[])
     quadruped_model::Quad_Kin_CppAD quadKinCPPAD(Robot_state);
     quadKinCPPAD.PrepareLegLoading();
     quadKinCPPAD.Angles_Torques_Initial(x_veri);
-    quadKinCPPAD.Store_Foot_Position_In_Baseframe();
     quadKinCPPAD.PrepareOptimization();
+    /*****test the constraints********/
+    std::cout << " the constraints of lf foot is : " << std::endl;
+    quadKinCPPAD.CppadPositionPrintf(lf_foot_position);
+
+    std::cout << " the constraints of rf foot is : " << std::endl;
+    quadKinCPPAD.CppadPositionPrintf(rf_foot_position);
 
     Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> A_, jac_;
     A_ = quadKinCPPAD.GetAMatrix();
@@ -256,42 +308,28 @@ int main(int argc, char *argv[])
         torques(i,0) = x_veri[i+12];
     }
 
-    std::cout << "matrix A is " << std::endl;
-    for (unsigned int i = 0; i < A_.rows();i++) {
-        for (unsigned int j = 0; j < A_.cols(); j++) {
-            std::cout << A_(i,j) << " ";
-        }
-        std::cout << std::endl;
-    }
+    std::cout << " before set the base position>........." << std::endl;
+    quadruped_model::Position_cppad foot_position;
+    foot_position = quadKinCPPAD.GetFootPositionInWorldframe(free_gait::LimbEnum::LF_LEG);// base frame is the world frame;
+    quadKinCPPAD.CppadPositionPrintf(foot_position);
 
-    std::cout << "jac_ is " << std::endl;
-    for (unsigned int i = 0; i < jac_.rows();i++) {
-        for (unsigned int j = 0; j < jac_.cols(); j++) {
-            std::cout << jac_(i,j) << " ";
-        }
-        std::cout << std::endl;
-    }
+    std::cout << " after set the base position>........." << std::endl;
+    quadruped_model::Pose_cppad base_pose;
+    base_pose.getPosition() << 0,0,x_veri[24];
+    base_pose.getRotation().setIdentity();
+    quadKinCPPAD.SetBaseInWorld(base_pose);
+    foot_position = quadKinCPPAD.GetFootPositionInWorldframe(free_gait::LimbEnum::LF_LEG);//base frame is above the world frame; unchanged position;
+    quadKinCPPAD.CppadPositionPrintf(foot_position);
+
     Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> final;
     final.resize(6,1);
-    std::cout << "calculate the final" <<std::endl;
     final = A_ * jac_ * torques;//base force
-    std::cout << "the base force is " << std::endl;
-    for (unsigned int i = 0; i < final.rows();i++) {
-        for (unsigned int j = 0; j < final.cols(); j++) {
-            std::cout << final(i,j) << " ";
-        }
-        std::cout << std::endl;
-    }
+    std::cout << "base force is :" << std::endl;
+    quadKinCPPAD.EigenMatrixPrintf(final.transpose());
 
+    std::cout << "foot force is : " << std::endl;
     final = jac_ * torques;//foot force;
-    std::cout << "the foot force is " << std::endl;
-
-    for (unsigned int i = 0; i < final.rows();i++) {
-        for (unsigned int j = 0; j < final.cols(); j++) {
-            std::cout << final(i,j) << " ";
-        }
-        std::cout << std::endl;
-    }
+    quadKinCPPAD.EigenMatrixPrintf(final.transpose());
 
     return 0;
 }
