@@ -32,9 +32,9 @@ void Quad_Kin_CppAD::Angles_Torques_Initial(const ADvector& x)
 {
 //    std::cout << "initial angles and torques" << std::endl;
     JointPositions all_joint_positions;
-    for (unsigned int i = 0; i < x.size(); i++) {
+    for (unsigned int i = 0; i < 12; i++) {
         angles_(i,0) = x[i];
-        torques_(i,0) = x[i + x.size() / 2];
+        torques_(i,0) = x[i + 12];
         all_joint_positions(i) =CppAD::Value(x[i]);
     }
     robot_state_->setJointPositions(all_joint_positions);

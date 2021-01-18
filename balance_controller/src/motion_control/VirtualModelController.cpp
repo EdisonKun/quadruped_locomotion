@@ -125,15 +125,19 @@ bool VirtualModelController::compute()
 {
   if (!isParametersLoaded()) return false;
 
+  std::cout << " in the virtual model controller*******" << std::endl;
+
   computeError();
   computeGravityCompensation();
   computeVirtualForce();
   computeVirtualTorque();
 //  cout << *this << endl;
+  /**Edison Kun make change here, where it is unnecessary to calculate the foot force;
   if (!contactForceDistribution_->computeForceDistribution(virtualForceInBaseFrame_, virtualTorqueInBaseFrame_)) {
 
     return false;
   }
+*//////
   return true;
 }
 
@@ -153,12 +157,15 @@ bool VirtualModelController::computeError()
 //                                                                                         orinetationWorldToBase.setUnique().vector()(2)));
 //  const RotationQuaternion& orientationWorldToControl = RotationQuaternion(orinetationWorldToBase) * orientationControlToBase.inverted();
 
+
    const RotationQuaternion& orientationControlToBase = robot_state_->getTargetOrientationBaseToWorld().inverted();//torso_->getMeasuredState().getOrientationControlToBase();
    positionErrorInControlFrame_ = robot_state_->getTargetPositionWorldToBaseInWorldFrame() //torso_->getDesiredState().getPositionControlToBaseInControlFrame()
        - robot_state_->getPositionWorldToBaseInWorldFrame();//torso_->getMeasuredState().getPositionControlToBaseInControlFrame();
    //! WSHY: in base !!!!
   orientationError_ = -orientationControlToBase.boxMinus(robot_state_->getOrientationBaseToWorld().inverted());//torso_->getDesiredState().getOrientationControlToBase().boxMinus(
       //torso_->getMeasuredState().getOrientationControlToBase());
+  std::cout << " in the compute error " << std::endl;
+  std::cout << " the actual position is " << robot_state_->getPositionWorldToBaseInWorldFrame() << std::endl;
 
   /***************************************************
    *  Method II
@@ -245,6 +252,7 @@ bool VirtualModelController::computeVirtualForce()
   const RotationQuaternion& orientationWorldToBase = robot_state_->getOrientationBaseToWorld().inverted();//torso_->getMeasuredState().getOrientationWorldToBase();
   const RotationQuaternion& orientationWorldToControl = orientationWorldToBase*orientationControlToBase.inverted();//robot_state_->getTargetOrientationBaseToWorld();//torso_->getMeasuredState().getOrientationWorldToControl();
 
+  std::cout << "orientation world to control is " << orientationWorldToControl << std::endl;
   Vector3d feedforwardTermInControlFrame = Vector3d::Zero();
   feedforwardTermInControlFrame.x() += robot_state_->getTargetLinearVelocityBaseInWorldFrame().x();//torso_->getDesiredState().getLinearVelocityBaseInControlFrame().x();
   feedforwardTermInControlFrame.y() += robot_state_->getTargetLinearVelocityBaseInWorldFrame().y();//torso_->getDesiredState().getLinearVelocityBaseInControlFrame().y();

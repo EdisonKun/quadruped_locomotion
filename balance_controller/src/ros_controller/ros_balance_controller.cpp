@@ -879,26 +879,17 @@ namespace balance_controller{
         desired_vmc_ft.header.stamp = ros::Time::now();
         Force net_force;
         Torque net_torque;
-//        ROS_INFO_STREAM("ending/61");
-//        ROS_INFO_STREAM("ending62");
         virtual_model_controller_->getDistributedVirtualForceAndTorqueInBaseFrame(net_force, net_torque);
-//        ROS_INFO_STREAM("ending62");
         kindr_ros::convertToRosGeometryMsg(Position(virtual_model_controller_->getDesiredVirtualForceInBaseFrame().vector()),
                                            desired_vmc_ft.wrench.force);
-//        ROS_INFO_STREAM("ending63");
         kindr_ros::convertToRosGeometryMsg(Position(virtual_model_controller_->getDesiredVirtualTorqueInBaseFrame().vector()),
                                            desired_vmc_ft.wrench.torque);
-//        ROS_INFO_STREAM("ending64");
         kindr_ros::convertToRosGeometryMsg(Position(net_force.vector()),
                                            vmc_force_torque.wrench.force);
-//        ROS_INFO_STREAM("ending65");
         kindr_ros::convertToRosGeometryMsg(Position(net_torque.vector()),
                                            vmc_force_torque.wrench.torque);
-//        ROS_INFO_STREAM("ending66");
         vitual_force_torque_.push_back(vmc_force_torque);
-//        ROS_INFO_STREAM("ending67");
         desired_vitual_force_torque_.push_back(desired_vmc_ft);
-//        ROS_INFO_STREAM("ending68");
 
         free_gait_msgs::RobotState desired_robot_state, actual_robot_state;
         desired_robot_state.lf_target.target_position.resize(1);
@@ -1210,28 +1201,6 @@ namespace balance_controller{
     base_desired_angular_velocity = LocalAngularVelocity(robot_state_msg->base_pose.twist.twist.angular.x,
                                                                               robot_state_msg->base_pose.twist.twist.angular.y,
                                                                               robot_state_msg->base_pose.twist.twist.angular.z);
-
-//    Pose current_base_pose = Pose(Position(robot_state_handle.getPosition()[0],
-//                                  robot_state_handle.getPosition()[1],
-//                                  robot_state_handle.getPosition()[2]),
-//                         RotationQuaternion(robot_state_handle.getOrientation()[0],
-//                                            robot_state_handle.getOrientation()[1],
-//                                            robot_state_handle.getOrientation()[2],
-//                                            robot_state_handle.getOrientation()[3]));
-//    ROS_INFO("Desired base pose: Position: ");
-//    std::cout<<base_desired_position<<std::endl;
-//    kindr::EulerAnglesZyxPD rotation_desired(base_desired_rotation);
-//    ROS_INFO("Desired base pose: Rotation: ");
-//    std::cout<<rotation_desired<<std::endl;
-//    ROS_INFO("Current base pose: Position: ");
-//    std::cout<<current_base_pose.getPosition()<<std::endl;
-//    kindr::EulerAnglesZyxPD rotation_current(current_base_pose.getRotation());
-//    ROS_INFO("Current base pose: Rotation: ");
-//    std::cout<<rotation_current<<std::endl;
-//    ROS_INFO("Orienitaion Error is : ");
-//    std::cout<<base_desired_rotation.boxMinus(current_base_pose.getRotation())<<std::endl;
-
-//    free_gait::JointPositions all_joint_positions;
     std::vector<double> joint_commands;
     joint_commands.resize(12);
     for(unsigned int i = 0;i<3;i++)

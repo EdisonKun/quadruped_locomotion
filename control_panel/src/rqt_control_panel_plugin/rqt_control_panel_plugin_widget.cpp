@@ -323,7 +323,7 @@ void rqt_control_panel_plugin_widget::on_Controllers_currentChanged(int index)
                 displayOutputInfos("green", "Switch to JOINT_POSITION");
             }
 
-        }else if (tab_name == "static walk") {
+        }else if (tab_name == "static walk controller") {
             std::cout<<"static walk controller"<<std::endl;
             e_stop_msg.data = false;
             eStopPublisher_.publish(e_stop_msg);
@@ -332,13 +332,13 @@ void rqt_control_panel_plugin_widget::on_Controllers_currentChanged(int index)
             controller_switch.request.strictness = controller_switch.request.STRICT;
             switchControllerClient_.call(controller_switch.request, controller_switch.response);
 
-            control_method.request.configure = "Joint Position";
+            control_method.request.configure = "Joint Effort";
             switchControlMethodClient_.call(control_method.request, control_method.response);
 
             if(controller_switch.response.ok && control_method.response.result)
             {
-                control_method_ = JOINT_POSITION;
-                displayOutputInfos("green", "Switch to JOINT_POSITION");
+                control_method_ = JOINT_EFFORT;
+                displayOutputInfos("green", "Switch to Static walk controller");
             }
 
         }
