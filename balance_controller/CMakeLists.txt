@@ -243,7 +243,12 @@ src/ros_controller/static_walk_controller.cpp
 )
 
 target_link_libraries(static_walk_controller
-${catkin_LIBRARIES}
+    ${PROJECT_NAME}
+    ${catkin_LIBRARIES}
+    ${Boost_LIBRARY_DIRS}
+    ${ifopt_LIBRARIES}
+    /usr/local/lib/libiitgenquadruped_model.so
+    /usr/local/lib/libiitgenhyq.so
 )
 
 add_library(ifopt_test_lib
@@ -314,6 +319,16 @@ target_link_libraries(ifopt_test_execuable_node
 
 add_executable(Quadruped_model_cppad_test_node test/Quadruped_model_cppad_test.cpp)
 target_link_libraries(Quadruped_model_cppad_test_node
+  ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARY_DIRS}
+  ${ifopt_LIBRARIES}
+  /usr/local/lib/libiitgenquadruped_model.so
+  /usr/local/lib/libiitgenhyq.so
+  )
+
+add_executable(optimization_server_node test/optimization_server.cpp)
+target_link_libraries(optimization_server_node
   ${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${Boost_LIBRARY_DIRS}

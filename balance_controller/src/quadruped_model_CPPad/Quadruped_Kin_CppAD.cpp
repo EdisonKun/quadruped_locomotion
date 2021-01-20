@@ -8,8 +8,8 @@ The single leg optimization is in the ifopt_test_execuable.cpp in balance_contro
 #include "Eigen/LU"
 namespace quadruped_model {
 Quad_Kin_CppAD::Quad_Kin_CppAD(std::shared_ptr<free_gait::State> robot_state)
-    :footDof_(3),robot_state_(robot_state){
-//    std::cout << "construct the quad_kin_cppad" << std::endl;
+    :footDof_(3){
+    std::cout << "construct the quad_kin_cppad" << std::endl;
     angles_.setOnes();
     torques_.setOnes();
     limbs_.push_back(free_gait::LimbEnum::LF_LEG);
@@ -21,6 +21,8 @@ Quad_Kin_CppAD::Quad_Kin_CppAD(std::shared_ptr<free_gait::State> robot_state)
     for (auto leg : limbs_) {
         legInfos_[leg] = LEGINFO();
     }
+    robot_state_.reset(new free_gait::State);
+    robot_state_ = robot_state;
 }
 
 Quad_Kin_CppAD::~Quad_Kin_CppAD()

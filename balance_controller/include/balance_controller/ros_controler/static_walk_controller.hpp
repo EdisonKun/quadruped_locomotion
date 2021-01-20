@@ -20,6 +20,7 @@
 #include "quadruped_model_CppAD/Quadruped_optimization.h"
 
 #include "std_srvs/Empty.h"
+#include "free_gait_msgs/optimize.h"
 
 namespace balance_controller{
 class static_walk_controller: public controller_interface::Controller<hardware_interface::RobotStateInterface>
@@ -86,6 +87,7 @@ private:
 
     boost::recursive_mutex r_mutex_;
     ros::ServiceServer optimize_srv_;
+    ros::ServiceClient client_cli_;
 };
 
 }//namespace

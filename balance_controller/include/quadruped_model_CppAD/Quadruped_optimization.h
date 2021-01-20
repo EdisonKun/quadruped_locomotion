@@ -32,6 +32,8 @@ public:
         A_ = quadKinCPPAD.GetAMatrix();
         jac_ = quadKinCPPAD.GetFootJacobian();
 
+        std::cout << " prepare to output the A_" << std::endl;
+
         quadKinCPPAD.EigenMatrixPrintf(A_);
 
         Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> torques;

@@ -7,9 +7,10 @@
  *  Institute: Harbin Institute of Technology, Shenzhen
  */
 // gtest
-//#include "quadruped_model_CppAD/Quadruped_optimization.h"
-#include "balance_controller/ros_controler/static_walk_controller.hpp"
-int main(int argc, char *argv[])
+#include "quadruped_model_CppAD/Quadruped_optimization.h"
+//#include "balance_controller/ros_controler/static_walk_controller.hpp"
+
+void funtion_test()
 {
     typedef CPPAD_TESTVECTOR(double) Dvector;
     size_t nx = 27;
@@ -67,10 +68,10 @@ int main(int argc, char *argv[])
     gl[8] = -1.0e5;gu[8] = 0;
     gl[9] = -1.0e5;gu[9] = 0;
 
-//        gl[6] = 0;gu[6] = 1.0e5;//force direction
-//        gl[7] = 0;gu[7] = 1.0e5;
-//        gl[8] = 0;gu[8] = 1.0e5;
-//        gl[9] = 0;gu[9] = 1.0e5;
+    //        gl[6] = 0;gu[6] = 1.0e5;//force direction
+    //        gl[7] = 0;gu[7] = 1.0e5;
+    //        gl[8] = 0;gu[8] = 1.0e5;
+    //        gl[9] = 0;gu[9] = 1.0e5;
 
     //calculate the current foot position in the world frame;
 
@@ -133,6 +134,14 @@ int main(int argc, char *argv[])
     options += "Numeric point_perturbation_radius  0.\n";
 
     CppAD::ipopt::solve_result<Dvector> solution;
+
+    std::cout << "xi is " << xi << std::endl;
+    std::cout << "xl is " << xl << std::endl;
+    std::cout << "xu is " << xu << std::endl;
+    std::cout << "gi is " << gl << std::endl;
+    std::cout << "gu is " << gu << std::endl;
+
+
 
     CppAD::ipopt::solve<Dvector, FG_eval>(options, xi, xl, xu, gl, gu, fg_eval, solution);
 
@@ -236,5 +245,14 @@ int main(int argc, char *argv[])
     std::cout << "foot force is : " << std::endl;
     final = jac_ * torques;//foot force;
     quadKinCPPAD.EigenMatrixPrintf(final.transpose());
+
+}
+int main(int argc, char *argv[])
+{
+    funtion_test();
+    funtion_test();
+    funtion_test();
+    funtion_test();
     return 0;
 }
+

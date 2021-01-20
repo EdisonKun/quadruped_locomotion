@@ -1,0 +1,6 @@
+#request fields
+free_gait_msgs/RobotState robot_state
+geometry_msgs/WrenchStamped desired_force
+---
+#response fields
+bool success
