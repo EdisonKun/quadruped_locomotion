@@ -45,7 +45,7 @@ bool robot_state_callback(free_gait_msgs::optimize::Request&  req,
         xi[i] = 2;
     }
 
-    size_t con_num = 10 + 12;//constraint number
+    size_t con_num = 10 + 16;//constraint number
     Dvector gl(con_num), gu(con_num);
     gl[0] = req.desired_force.wrench.force.x; gu[0] = gl[0];
     gl[1] = req.desired_force.wrench.force.y; gu[1] = gl[1];
@@ -184,7 +184,9 @@ bool robot_state_callback(free_gait_msgs::optimize::Request&  req,
     gl[20] = CppAD::Value(quadkin.GetFootPositionInWorldframe(free_gait::LimbEnum::LH_LEG).y());gu[20] = gl[20];
     gl[21] = CppAD::Value(quadkin.GetFootPositionInWorldframe(free_gait::LimbEnum::LH_LEG).z());gu[21] = gl[21];
 
-
+    for (int i = 22; i < 26; i++) {
+        gl[i] = 0; gu[i] = 1.0e5;
+    }
 
     xi[24] = req.robot_state.base_pose.pose.pose.position.z;// base constraints in the z direction;
     xu[24] = 0.5; xl[24] = 0.0;
@@ -201,7 +203,8 @@ bool robot_state_callback(free_gait_msgs::optimize::Request&  req,
 
     FG_eval fg_eval;
 
-    fg_eval.SetRobotState(robot_state);
+//    fg_eval.SetRobotState(robot_state);
+    fg_eval.SetRobotState();
 
     std::string options;
     // turn off any printing
@@ -220,6 +223,9 @@ bool robot_state_callback(free_gait_msgs::optimize::Request&  req,
     options += "Numeric point_perturbation_radius  0.\n";
 
     CppAD::ipopt::solve_result<Dvector> solution;
+
+    std::cout << " now prepare to solve" << std::endl;
+
     CppAD::ipopt::solve<Dvector, FG_eval>(options, xi, xl, xu, gl, gu, fg_eval, solution);
 
     std::cout << "********solution status********" << solution.status << std::endl;
@@ -242,51 +248,19 @@ bool robot_state_callback(free_gait_msgs::optimize::Request&  req,
     std::cout << "base position is " << solution.x[25] << " " << solution.x[26] << " " << solution.x[24] << std::endl;
     std::cout << "------------------*-----------------" << std::endl;
 
-    std::shared_ptr<free_gait::State> Robot_state;
-    Robot_state.reset(new free_gait::State);
-
-    std::vector<free_gait::LimbEnum> limbs_;
-    std::vector<free_gait::BranchEnum> branches_;
-    limbs_.push_back(free_gait::LimbEnum::LF_LEG);
-    limbs_.push_back(free_gait::LimbEnum::RF_LEG);
-    limbs_.push_back(free_gait::LimbEnum::RH_LEG);
-    limbs_.push_back(free_gait::LimbEnum::LH_LEG);
-
-    branches_.push_back(free_gait::BranchEnum::BASE);
-    branches_.push_back(free_gait::BranchEnum::LF_LEG);
-    branches_.push_back(free_gait::BranchEnum::RF_LEG);
-    branches_.push_back(free_gait::BranchEnum::RH_LEG);
-    branches_.push_back(free_gait::BranchEnum::LH_LEG);
-
-
-    Robot_state->initialize(limbs_, branches_);
-    Robot_state->setSupportLeg(free_gait::LimbEnum::LF_LEG, true);
-    Robot_state->setSupportLeg(free_gait::LimbEnum::RF_LEG, true);
-    Robot_state->setSupportLeg(free_gait::LimbEnum::RH_LEG, true);
-    Robot_state->setSupportLeg(free_gait::LimbEnum::LH_LEG, true);
-
-
-    typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
-
     for (unsigned int i = 0; i < nx; i++) {
         x_veri[i] = solution.x[i];
     }
 
 
-    quadruped_model::Quad_Kin_CppAD quadKinCPPAD(Robot_state);
-    quadKinCPPAD.PrepareLegLoading();
-    quadKinCPPAD.Angles_Torques_Initial(x_veri);
-    quadKinCPPAD.PrepareOptimization();
-    /*****test the constraints********//*
-    std::cout << " the constraints of lf foot is : " << std::endl;
-    quadKinCPPAD.CppadPositionPrintf(lf_foot_position);
 
-    std::cout << " the constraints of rf foot is : " << std::endl;
-    quadKinCPPAD.CppadPositionPrintf(rf_foot_position);*/
+    quadkin.PrepareLegLoading();
+    quadkin.Angles_Torques_Initial(x_veri);
+    quadkin.PrepareOptimization();
 
     Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> A_, jac_;
-    A_ = quadKinCPPAD.GetAMatrix();
-    jac_ = quadKinCPPAD.GetFootJacobian();
+    A_ = quadkin.GetAMatrix();
+    jac_ = quadkin.GetFootJacobian();
 
     Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> torques;
     torques.resize(12,1);
@@ -303,23 +277,23 @@ bool robot_state_callback(free_gait_msgs::optimize::Request&  req,
     quadruped_model::Pose_cppad base_pose;
     base_pose.getPosition() << x_veri[25],x_veri[26],x_veri[24];
     base_pose.getRotation().setIdentity();
-    quadKinCPPAD.SetBaseInWorld(base_pose);
+    quadkin.SetBaseInWorld(base_pose);
     std::cout << " after set the base position. the foot position is........." << std::endl;
     quadruped_model::Position_cppad foot_position;
-    foot_position = quadKinCPPAD.GetFootPositionInWorldframe(free_gait::LimbEnum::LF_LEG);// base frame is the world frame;
-    quadKinCPPAD.CppadPositionPrintf(foot_position);
+    foot_position = quadkin.GetFootPositionInWorldframe(free_gait::LimbEnum::LF_LEG);// base frame is the world frame;
+    quadkin.CppadPositionPrintf(foot_position);
 
     Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> final;
     final.resize(6,1);
     final = A_ * jac_ * torques;//base force
     std::cout << "base force is :" << std::endl;
-    quadKinCPPAD.EigenMatrixPrintf(final.transpose());
+    quadkin.EigenMatrixPrintf(final.transpose());
 
     std::cout << "foot force is : " << std::endl;
     final = jac_ * torques;//foot force;
-    quadKinCPPAD.EigenMatrixPrintf(final.transpose());
-    ROS_INFO_STREAM("Success~");
+    quadkin.EigenMatrixPrintf(final.transpose());
     res.success = true;
+    ROS_INFO_STREAM("Success~");
     return true;
 
 }

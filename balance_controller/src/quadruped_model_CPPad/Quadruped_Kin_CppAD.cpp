@@ -102,14 +102,14 @@ bool Quad_Kin_CppAD::PrepareLegLoading()
 
 void Quad_Kin_CppAD::PrepareOptimization()
 {
-//    std::cout << "PrepareOptimization" << std::endl;
+    std::cout << "PrepareOptimization" << std::endl;
     n_ = footDof_ * nLegsInForceDistributuion_;//3 * nlegs support;
     A_.resize(6,n_);
     A_.setZero();
     Eigen::Matrix<CppAD::AD<double>,3,3> I_matrix;
     I_matrix.setIdentity();
     A_.middleRows(0, footDof_) = I_matrix.replicate(1, nLegsInForceDistributuion_);
-//    std::cout << "success get the A_" << std::endl;
+    std::cout << "success get the A_" << std::endl;
 
     Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> A_bottomMatrix(3,n_);
     Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> foot_skew(3, 3);
@@ -143,7 +143,7 @@ void Quad_Kin_CppAD::PrepareOptimization()
                 foot_jacobians_[legInfo.first];
         }
     }
-//    std::cout << "success get the jacobians" << std::endl;
+    std::cout << "success get the jacobians" << std::endl;
 }
 
 void Quad_Kin_CppAD::Store_the_jacobians()

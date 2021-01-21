@@ -83,8 +83,6 @@ private:
 
     LimbFlag real_contact_, is_cartisian_motion_, is_footstep_, is_legmode_;
 
-    bool need_to_optimization_;
-
     boost::recursive_mutex r_mutex_;
     ros::ServiceServer optimize_srv_;
     ros::ServiceClient client_cli_;

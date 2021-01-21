@@ -13,6 +13,7 @@
 #include "cppad/ipopt/solve.hpp"
 #include "cppad/example/cppad_eigen.hpp"
 #include <Eigen/LU>
+#include <cmath>
 
 
 namespace  {
@@ -32,9 +33,6 @@ public:
         A_ = quadKinCPPAD.GetAMatrix();
         jac_ = quadKinCPPAD.GetFootJacobian();
 
-        std::cout << " prepare to output the A_" << std::endl;
-
-        quadKinCPPAD.EigenMatrixPrintf(A_);
 
         Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> torques;
         torques.resize(12,1);
@@ -67,7 +65,7 @@ public:
         }//7~10
 
         //add foot position constraints;
-
+        std::cout << " add foot position constraints" << std::endl;
         quadruped_model::Pose_cppad basepose_cppad;
         basepose_cppad.getPosition() << base_x,base_y,base_z;
         basepose_cppad.getRotation().setIdentity();
@@ -88,6 +86,23 @@ public:
         fg[20] = quadKinCPPAD.GetFootPositionInWorldframe(free_gait::LimbEnum::LH_LEG).x();
         fg[21] = quadKinCPPAD.GetFootPositionInWorldframe(free_gait::LimbEnum::LH_LEG).y();
         fg[22] = quadKinCPPAD.GetFootPositionInWorldframe(free_gait::LimbEnum::LH_LEG).z();
+
+        std::cout << " add the x-y direction force constraints" << std::endl;
+        //add the constraints of force in the x-y direction; convert it to the unequal formula;
+        double friction_para = 0.4;
+        fg[23] = foot_force.at(0)(2,0) * friction_para - std::fabs(CppAD::Value(foot_force.at(0)(0,0)));//lf leg - x
+        fg[24] = foot_force.at(0)(2,0) * friction_para - std::fabs(CppAD::Value(foot_force.at(0)(1,0)));//lf leg - y
+
+        fg[25] = foot_force.at(1)(2,0) * friction_para - std::fabs(CppAD::Value(foot_force.at(1)(0,0)));//rf leg - x
+        fg[26] = foot_force.at(1)(2,0) * friction_para - std::fabs(CppAD::Value(foot_force.at(1)(1,0)));//rf leg - y
+
+        std::cout << "finsih the optimization load" << std::endl;
+
+//        fg[27] = foot_force.at(2)(2,0) * friction_para - foot_force.at(2)(0,0);//rh leg - x
+//        fg[28] = foot_force.at(2)(2,0) * friction_para - foot_force.at(2)(1,0);//rh leg - y
+
+//        fg[29] = foot_force.at(3)(2,0) * friction_para - foot_force.at(3)(0,0);//lh leg - x
+//        fg[30] = foot_force.at(3)(2,0) * friction_para - foot_force.at(3)(1,0);//lh leg - y
 
     }
 

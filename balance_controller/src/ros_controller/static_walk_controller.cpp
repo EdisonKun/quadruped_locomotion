@@ -28,9 +28,6 @@ static_walk_controller::static_walk_controller()
         is_footstep_[limb] = false;
         is_legmode_[limb] = false;
     }
-
-    need_to_optimization_ = true;
-
 }//static_walk_controller
 
 static_walk_controller::~static_walk_controller()
@@ -190,20 +187,15 @@ void static_walk_controller::update(const ros::Time &time, const ros::Duration &
         ROS_ERROR("VMC compute failed");
         ROS_WARN_STREAM(virtual_model_controller_);
     }
-//    std::cout << "the desired force is " << std::endl;
-//    std::cout << virtual_model_controller_->getDesiredVirtualForceInBaseFrame() << std::endl;
-//    std::cout << virtual_model_controller_->getDesiredVirtualTorqueInBaseFrame() << std::endl;
+
 
     for (int i = 0; i < 4; i++) {
         free_gait::JointEffortsLeg joint_torque_limb = robot_state_->getJointEffortsForLimb(static_cast<free_gait::LimbEnum>(i));
-//        std::cout << "joint torque limb is " << joint_torque_limb << std::endl;
-        joint_torque_limb.setZero();
 
         int start_index = i * 3;
         for (int j = 0; j < 3; j++) {
             double joint_torque_command = joint_torque_limb(j);
             int index = start_index + j;
-//            ROS_DEBUG("Torque computed pf joint %d is : %f\n", index, joint_torque_command);
 
             robot_state_handle_.getJointEffortWrite()[index] = joint_torque_command;
             robot_state_handle_.mode_of_joint_[i] = 4;// joint mode,profile or others
@@ -215,13 +207,6 @@ void static_walk_controller::update(const ros::Time &time, const ros::Duration &
         }
     }
 
-    /**add the optimization function*/
-
-    if(need_to_optimization_)
-    {
-        //add the optimization function
-
-    }
     for (unsigned int i = 0; i < 4; i++) {
         free_gait::LimbEnum limb = static_cast<free_gait::LimbEnum>(i);
         if(robot_state_->isSupportLeg(limb))
@@ -768,151 +753,17 @@ bool static_walk_controller::optimization_solve(std_srvs::Empty::Request& req,
                                        desired_vmc_ft.wrench.torque);
 
     srv.request.desired_force = desired_vmc_ft;
-
     if (client_cli_.call(srv))
     {
-        ROS_INFO("Sum: %ld", (long int)srv.response.success);
-    }
-    else
+        ROS_INFO_STREAM("the response is " << srv.response.success);
+    }else
     {
-        ROS_ERROR("Failed to call service add_two_ints");
-        return 1;
+        ROS_ERROR("Failed to call service yummmmmmmmy");
+        return false;
     }
     ROS_INFO_STREAM("SUCCESS, Ignore the error message~");
-    return 0;
 
-
-//    typedef CPPAD_TESTVECTOR(double) Dvector;
-//    size_t nx = 27;
-//    Dvector xi(nx);
-//    Dvector xl(nx),xu(nx);
-//    for (unsigned int i = 0; i < joints_.size(); i++) {
-//        xi[i] = robot_state_->getJointPositions()(i);
-//    }
-//    std::cout << "robot angles are " << std::endl;
-//    for (unsigned int i = 0; i < joints_.size(); i++) {
-//        std::cout << xi[i] << " ";
-//    }
-//    std::cout << std::endl;
-//    xu[0] = 0.65; xl[0] = -xu[0];
-//    xu[1] = 2;    xl[1] = -xu[1];
-//    xu[2] = -0.1; xl[2] = -3;
-//    xu[3] = 0.65; xl[3] = -xu[3];
-//    xu[4] = 2;    xl[4] = -xu[4];
-//    xu[5] = 3;    xl[5] = 0.1;
-//    xu[6] = 0.65; xl[6] = -xu[6];
-//    xu[7] = 2;    xl[7] = -xu[7];
-//    xu[8] = -0.1; xl[8] = -3;
-//    xu[9] = 0.65; xl[9] = -xu[9];
-//    xu[10] = 2;   xl[10]= - xu[10];
-//    xu[11] = 3;   xl[11]= 0.1;
-
-//    for (unsigned int i = 12; i < 24; i++) {
-//        xu[i] = 65;
-//        xl[i] = - xu[i];
-//        xi[i] = 2;
-//    }
-//    size_t con_num = 10 + 12;
-
-//    Dvector gl(con_num), gu(con_num);
-
-//    gl[0] = force_in_base.x(); gu[0] = force_in_base.x();
-//    gl[1] = force_in_base.y(); gu[1] = force_in_base.y();
-//    gl[2] = force_in_base.z(); gu[2] = force_in_base.z();//force in the z direction;
-//    gl[3] = torque_in_base.x();gu[3] = torque_in_base.x();//roll
-//    gl[4] = torque_in_base.y();gu[4] = torque_in_base.y();//yaw
-//    gl[5] = torque_in_base.z();gu[5] = torque_in_base.z();//pitch
-//    std::cout << "base force is "<< force_in_base << torque_in_base << std::endl;
-
-//    if(gl[2] < 0)
-//    {
-//        gl[6] = -1.0e5;gu[6] = 0;//foot force direction
-//        gl[7] = -1.0e5;gu[7] = 0;
-//        gl[8] = -1.0e5;gu[8] = 0;
-//        gl[9] = -1.0e5;gu[9] = 0;
-//    }else {
-//        gl[6] = 0;gu[6] = 1.0e5;//force direction
-//        gl[7] = 0;gu[7] = 1.0e5;
-//        gl[8] = 0;gu[8] = 1.0e5;
-//        gl[9] = 0;gu[9] = 1.0e5;
-//    }
-//    iit::simpledog::JointState joint_angles;
-//    for (unsigned int i = 0; i < 12; i++) {
-//        joint_angles(i) = robot_state_handle_.getJointPositionRead()[i];
-//    }
-//    std::cout << "joint angles are" << std::endl;
-//    for (unsigned int i = 0; i < 12; i++) {
-//        std::cout << joint_angles(i);
-//    }
-//    std::cout << std::endl;
-
-//    iit::simpledog::HomogeneousTransforms motion_trans;
-
-//    quadruped_model::Position_cppad lf_foot_position;
-//    lf_foot_position.vector() = motion_trans.fr_base_X_LF_FOOT(joint_angles).block(0,3,3,1);
-//    gl[10] = CppAD::Value(lf_foot_position.x()); gu[10] = CppAD::Value(lf_foot_position.x());
-//    gl[11] = CppAD::Value(lf_foot_position.y()); gu[11] = CppAD::Value(lf_foot_position.y());
-//    gl[12] = CppAD::Value(lf_foot_position.z()); gu[12] = CppAD::Value(lf_foot_position.z());
-
-//    quadruped_model::Position_cppad rf_foot_position;
-//    rf_foot_position.vector() = motion_trans.fr_base_X_RF_FOOT(joint_angles).block(0,3,3,1);
-//    gl[13] = CppAD::Value(rf_foot_position.x());gu[13] = CppAD::Value(rf_foot_position.x());
-//    gl[14] = CppAD::Value(rf_foot_position.y());gu[14] = CppAD::Value(rf_foot_position.y());
-//    gl[15] = CppAD::Value(rf_foot_position.z());gu[15] = CppAD::Value(rf_foot_position.z());
-
-
-//    quadruped_model::Position_cppad rh_foot_position;
-//    rh_foot_position.vector() = motion_trans.fr_base_X_RH_FOOT(joint_angles).block(0,3,3,1);
-//    gl[16] = CppAD::Value(rh_foot_position.x());gu[16] = CppAD::Value(rh_foot_position.x());
-//    gl[17] = CppAD::Value(rh_foot_position.y());gu[17] = CppAD::Value(rh_foot_position.y());
-//    gl[18] = CppAD::Value(rh_foot_position.z());gu[18] = CppAD::Value(rh_foot_position.z());
-
-//    quadruped_model::Position_cppad lh_foot_position;
-//    lh_foot_position.vector() = motion_trans.fr_base_X_LH_FOOT(joint_angles).block(0,3,3,1);
-//    gl[19] = CppAD::Value(lh_foot_position.x());gu[19] = CppAD::Value(lh_foot_position.x());
-//    gl[20] = CppAD::Value(lh_foot_position.y());gu[20] = CppAD::Value(lh_foot_position.y());
-//    gl[21] = CppAD::Value(lh_foot_position.z());gu[21] = CppAD::Value(lh_foot_position.z());
-
-//    //add base constraints in the x-y direction;
-//    xi[25] = robot_state_handle_.getPosition()[0];//x
-//    xu[25] = CppAD::Value(lf_foot_position.x());
-//    xl[25] = -CppAD::Value(lf_foot_position.x());
-
-//    xi[26] = robot_state_handle_.getPosition()[1];//y
-//    xu[26] = CppAD::Value(lf_foot_position.y());
-//    xl[26] = -CppAD::Value(lf_foot_position.y());
-
-//    xi[24] = robot_state_handle_.getPosition()[2];// base constraints in the z direction;
-//    xu[24] = 0.5;
-//    xl[24] = 0.0;
-//    std::cout << "21dasdad" << std::endl;
-
-//    FG_eval fg_eval;
-//    fg_eval.SetRobotState();
-
-//    std::string options;
-//    // turn off any printing
-//    options += "Integer print_level  1\n";
-//    options += "String  sb           yes\n";
-//    // maximum number of iterations
-//    options += "Integer max_iter     20000\n";
-//    // approximate accuracy in first order necessary conditions;
-//    // see Mathematical Programming, Volume 106, Number 1,
-//    // Pages 25-57, Equation (6)
-//    options += "Numeric tol          1e-3\n";
-//    // derivative testing
-//    options += "String  derivative_test            second-order\n";
-//    // maximum amount of random pertubation; e.g.,
-//    // when evaluation finite diff
-//    options += "Numeric point_perturbation_radius  0.\n";
-
-//    CppAD::ipopt::solve_result<Dvector> solution;
-//    std::cout << "*****" << std::endl;
-
-//    CppAD::ipopt::solve<Dvector, FG_eval>(options, xi, xl, xu, gl, gu, fg_eval, solution);
-
-
-
+    return true;
 
 }
 
