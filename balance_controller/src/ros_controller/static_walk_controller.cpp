@@ -76,6 +76,7 @@ bool static_walk_controller::init(hardware_interface::RobotStateInterface *hardw
         ROS_ERROR_STREAM("List of joint names is empty.");
         return false;
     }
+    pid_controllers_.resize(n_joints_);
 
     for (unsigned int i = 0; i < n_joints_; i++) {
         try {
@@ -91,8 +92,15 @@ bool static_walk_controller::init(hardware_interface::RobotStateInterface *hardw
         {
             ROS_ERROR("Could not find joint '%s' in urdf", joint_names_[i].c_str());
             return false;
-        }
+        }        
+
         joint_urdfs_.push_back(joint_urdf);
+
+//        if(!pid_controllers_[i].init(ros::NodeHandle(nodehandle, joint_names_[i] + "/pid")))
+//        {
+//            ROS_ERROR_STREAM("Failed to load PID parameters from " << joint_names_[i] + "/pid");
+//            return false;
+//        }
     }
     robot_state_handle_ = hardware->getHandle("base_controller");
     ROS_INFO("static walk controller is to be initialized");
@@ -105,12 +113,30 @@ bool static_walk_controller::init(hardware_interface::RobotStateInterface *hardw
     }
 
 
+
     commands_buffer.writeFromNonRT(std::vector<double>(n_joints_, 0.0));
 
     optimize_srv_ = nodehandle.advertiseService("/optimize_solve", &static_walk_controller::optimization_solve, this);
     client_cli_ = nodehandle.serviceClient<free_gait_msgs::optimize>("/optimize");
 
     base_command_sub_ = nodehandle.subscribe<free_gait_msgs::RobotState>("/desired_robot_state", 1, &static_walk_controller::baseCommandCallback, this);
+
+    nodehandle.param("action_server_topic", actionServerTopic_,
+              std::string("/free_gait/action_server"));
+
+    stepActionClient_ = std::unique_ptr<actionlib::SimpleActionClient<free_gait_msgs::ExecuteStepsAction>>(
+        new actionlib::SimpleActionClient<free_gait_msgs::ExecuteStepsAction>(
+            actionServerTopic_, true));
+    log_data_srv_ = nodehandle.advertiseService("/capture_log_data_jt", &static_walk_controller::logDataCapture, this);
+
+    joint_command_pub_ = nodehandle.advertise<sensor_msgs::JointState>("/log/joint_command_jt", log_length_);
+    joint_actual_pub_ = nodehandle.advertise<sensor_msgs::JointState>("/log/joint_state_jt", log_length_);
+    desired_robot_state_pub_ = nodehandle.advertise<free_gait_msgs::RobotState>("/log/desired_robot_state_jt", log_length_);
+    actual_robot_state_pub_ = nodehandle.advertise<free_gait_msgs::RobotState>("/log/actual_robot_state_jt", log_length_);
+
+    base_command_pub_ = nodehandle.advertise<nav_msgs::Odometry>("/log/base_command_jt", log_length_);
+    base_actual_pub_ = nodehandle.advertise<nav_msgs::Odometry>("/log/base_actual_jt", log_length_);
+    torques_square_pub_ = nodehandle.advertise<std_msgs::Float64>("/log/torques_square_jt", log_length_);
 
     return true;
 }
@@ -165,6 +191,11 @@ void static_walk_controller::update(const ros::Time &time, const ros::Duration &
     robot_state_->setCurrentLimbJoints(all_joint_positions);
     robot_state_->setCurrentLimbJointVelocities(all_joint_velocities);
 
+//    std::cout << "the base position is " << robot_state_handle_.getPosition()[0] <<
+//            robot_state_handle_.getPosition()[1] << robot_state_handle_.getPosition()[2]<< std::endl;
+//    std::cout << "the joint posiiton is " << all_joint_positions << std::endl;
+
+
     //set current position to robot_state;
     Pose current_base_pose = Pose(Position(robot_state_handle_.getPosition()[0],
                                            robot_state_handle_.getPosition()[1],
@@ -188,14 +219,17 @@ void static_walk_controller::update(const ros::Time &time, const ros::Duration &
         ROS_WARN_STREAM(virtual_model_controller_);
     }
 
-
+    double torques_square;
+    torques_square = 0;
     for (int i = 0; i < 4; i++) {
         free_gait::JointEffortsLeg joint_torque_limb = robot_state_->getJointEffortsForLimb(static_cast<free_gait::LimbEnum>(i));
+//        std::cout << "joint torque limb is " << joint_torque_limb << std::endl;
 
         int start_index = i * 3;
         for (int j = 0; j < 3; j++) {
             double joint_torque_command = joint_torque_limb(j);
             int index = start_index + j;
+            torques_square = torques_square + joint_torque_command * joint_torque_command;
 
             robot_state_handle_.getJointEffortWrite()[index] = joint_torque_command;
             robot_state_handle_.mode_of_joint_[i] = 4;// joint mode,profile or others
@@ -207,11 +241,11 @@ void static_walk_controller::update(const ros::Time &time, const ros::Duration &
         }
     }
 
+
     for (unsigned int i = 0; i < 4; i++) {
         free_gait::LimbEnum limb = static_cast<free_gait::LimbEnum>(i);
         if(robot_state_->isSupportLeg(limb))
         {
-//            std::cout << " the leg " << i << " is support leg" << std::endl;
             joints_[3 * i + 0].setCommand(joint_command.effort[3 * i]);
             joints_[3 * i + 1].setCommand(joint_command.effort[3 * i + 1]);
             joints_[3 * i + 2].setCommand(joint_command.effort[3 * i + 2]);
@@ -219,11 +253,10 @@ void static_walk_controller::update(const ros::Time &time, const ros::Duration &
     }
 
 
-//    std::cout << "log_data_ value is " << log_data_ << std::endl;
-
+    log_data_ = true;
     if(log_data_)
     {
-        std::cout << "in the log_data " << std::endl;
+        ROS_INFO_STREAM_ONCE("LOG DATA ING");
         motor_status_word_.push_back(status_word);
         geometry_msgs::WrenchStamped vmc_force_torque, desired_vmc_ft;
         vmc_force_torque.header.frame_id = "/base_link";
@@ -234,9 +267,9 @@ void static_walk_controller::update(const ros::Time &time, const ros::Duration &
         Force net_force;
         Torque net_torque;
         virtual_model_controller_->getDistributedVirtualForceAndTorqueInBaseFrame(net_force, net_torque);//base force and torques
-        std::cout << " the distributed virtual force and torque is " << net_force << net_torque << std::endl;
-        std::cout << " the desired virtual force and torque is " << virtual_model_controller_->getDesiredVirtualForceInBaseFrame()
-            << virtual_model_controller_->getDesiredVirtualTorqueInBaseFrame()<< std::endl;
+//        std::cout << " the distributed virtual force and torque is " << net_force << net_torque << std::endl;
+//        std::cout << " the desired virtual force and torque is " << virtual_model_controller_->getDesiredVirtualForceInBaseFrame()
+//            << virtual_model_controller_->getDesiredVirtualTorqueInBaseFrame()<< std::endl;
 
 //        kindr_ros::convertToRosGeometryMsg(Position(virtual_model_controller_->getDesiredVirtualForceInBaseFrame().vector()),
 //                                           desired_vmc_ft.wrench.force);
@@ -318,6 +351,7 @@ void static_walk_controller::update(const ros::Time &time, const ros::Duration &
         base_command_pose_.push_back(desire_odom);
         joint_command_.push_back(joint_command);
         joint_actual_.push_back(joint_actual);
+        torques_square_.push_back(torques_square);
 
         std::vector<sensor_msgs::JointState> joint_states_leg, joint_commands_leg;
         joint_states_leg.resize(4);
@@ -762,7 +796,81 @@ bool static_walk_controller::optimization_solve(std_srvs::Empty::Request& req,
         return false;
     }
     ROS_INFO_STREAM("SUCCESS, Ignore the error message~");
+    ROS_INFO_STREAM("Now, send the action");
 
+    free_gait_msgs::Step initial_steps;
+    free_gait_msgs::BaseTarget base_target_msg;
+    base_target_msg.target.header.frame_id = "odom";
+    base_target_msg.target.pose.position.z = srv.response.desired_robotstate.base_pose.pose.pose.position.z;
+    base_target_msg.target.pose.position.x = srv.response.desired_robotstate.base_pose.pose.pose.position.x;
+    base_target_msg.target.pose.position.y = srv.response.desired_robotstate.base_pose.pose.pose.position.y;
+
+    base_target_msg.ignore_timing_of_leg_motion = false;
+
+    initial_steps.base_target.push_back(base_target_msg);
+    step_goal.steps.push_back(initial_steps);
+    stepActionClient_->sendGoal(step_goal);
+    stepActionClient_->waitForResult();
+    std::cout << "still waiting for results" << std::endl;
+    return true;
+
+}
+
+double static_walk_controller::computeTorqueFromPositionCommand(const double &command, int i, const ros::Duration &period)
+{
+    double command_position = command;
+    double error;
+    double commanded_effort;
+
+    double current_position = joints_[i].getPosition();
+
+    enforceJointLimits(command_position, i);
+
+    if(joint_urdfs_[i]->type == urdf::Joint::REVOLUTE)
+    {
+        angles::shortest_angular_distance_with_limits(current_position,command_position,
+                                                      joint_urdfs_[i]->limits->lower,joint_urdfs_[i]->limits->upper,error);
+    }else if(joint_urdfs_[i]->type == urdf::Joint::CONTINUOUS)
+    {
+        error = angles::shortest_angular_distance(current_position, command_position);
+    }else{
+        error = command_position - current_position;
+    }
+    commanded_effort = pid_controllers_[i].computeCommand(error, period);
+    return commanded_effort;
+
+}
+
+void static_walk_controller::enforceJointLimits(double &command, unsigned int index)
+{
+    if(joint_urdfs_[index]->type == urdf::Joint::REVOLUTE || joint_urdfs_[index]->type == urdf::Joint::PRISMATIC)
+    {
+        if(command > joint_urdfs_[index]->limits->upper)
+        {
+            command = joint_urdfs_[index]->limits->upper;
+        }else if( command < joint_urdfs_[index]->limits->lower ) // below lower limit
+        {
+            command = joint_urdfs_[index]->limits->lower;
+        }
+    }
+}
+
+bool static_walk_controller::logDataCapture(std_srvs::Empty::Request& req,std_srvs::Empty::Response& res)
+{
+    ROS_INFO("Call to Capture Log Data");
+    ROS_INFO_STREAM("Call to Capture Log Data" << desired_robot_state_.size());
+    for(int index = 0; index<desired_robot_state_.size(); index++)
+    {
+        base_command_pub_.publish(base_command_pose_[index]);
+        base_actual_pub_.publish(base_actual_pose_[index]);
+        joint_command_pub_.publish(joint_command_[index]);
+        joint_actual_pub_.publish(joint_actual_[index]);
+        desired_robot_state_pub_.publish(desired_robot_state_[index]);
+        actual_robot_state_pub_.publish(actual_robot_state_[index]);
+        torques_square_pub_.publish(torques_square_[index]);
+        ros::Duration(0.0025).sleep();
+    }
+    ROS_INFO("Success captured log data");
     return true;
 
 }

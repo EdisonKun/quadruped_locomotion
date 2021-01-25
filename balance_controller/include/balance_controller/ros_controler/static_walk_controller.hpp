@@ -13,6 +13,7 @@
 #include "balance_controller/contact_force_distribution/ContactForceDistribution.hpp"
 #include "std_msgs/Int8MultiArray.h"
 #include "geometry_msgs/WrenchStamped.h"
+#include "std_msgs/Float64.h"
 
 #include "kindr_ros/kindr_ros.hpp"
 #include "sim_assiants/FootContacts.h"
@@ -21,6 +22,9 @@
 
 #include "std_srvs/Empty.h"
 #include "free_gait_msgs/optimize.h"
+
+#include "actionlib/client/simple_action_client.h"
+#include "free_gait_msgs/ExecuteStepsAction.h"
 
 namespace balance_controller{
 class static_walk_controller: public controller_interface::Controller<hardware_interface::RobotStateInterface>
@@ -41,9 +45,12 @@ public:
     void stopping(const ros::Time& time);
     bool optimization_solve(std_srvs::Empty::Request& req,
                             std_srvs::Empty::Response& res);
+    double computeTorqueFromPositionCommand(const double& command, int i, const ros::Duration& period);
+    void enforceJointLimits(double& command, unsigned int index);
 
 private:
     void baseCommandCallback(const free_gait_msgs::RobotStateConstPtr& robot_state_msgs);
+    bool logDataCapture(std_srvs::Empty::Request& req,std_srvs::Empty::Response& res);
     std::vector<std::string> joint_names_;
     std::vector<hardware_interface::JointHandle> joints_;
     hardware_interface::RobotStateHandle robot_state_handle_;
@@ -55,6 +62,7 @@ private:
     std::vector<free_gait::BranchEnum> branches_;
 
     std::shared_ptr<free_gait::State> robot_state_;
+    std::vector<control_toolbox::Pid> pid_controllers_;
 
     std::vector<urdf::JointConstSharedPtr> joint_urdfs_;
 
@@ -77,15 +85,27 @@ private:
     LimbVector foot_positions, foot_velocities, foot_accelerations, real_contact_force_, stored_foot_positions;
     std::vector<free_gait_msgs::RobotState> desired_robot_state_, actual_robot_state_;
 
+    std::vector<double> torques_square_;
     realtime_tools::RealtimeBuffer<std::vector<double>> commands_buffer;
     ros::Subscriber base_command_sub_;
     ros::ServiceServer log_data_srv_;
 
+    ros::Publisher joint_command_pub_, base_command_pub_, base_actual_pub_, joint_actual_pub_,
+        desired_robot_state_pub_, actual_robot_state_pub_, torques_square_pub_;
+
+
     LimbFlag real_contact_, is_cartisian_motion_, is_footstep_, is_legmode_;
 
+
+    //optimize service
     boost::recursive_mutex r_mutex_;
     ros::ServiceServer optimize_srv_;
     ros::ServiceClient client_cli_;
+
+    //action
+    std::string actionServerTopic_;
+    free_gait_msgs::ExecuteStepsGoal step_goal;
+    std::unique_ptr<actionlib::SimpleActionClient<free_gait_msgs::ExecuteStepsAction>> stepActionClient_;
 };
 
 }//namespace

@@ -189,7 +189,7 @@ bool robot_state_callback(free_gait_msgs::optimize::Request&  req,
     }
 
     xi[24] = req.robot_state.base_pose.pose.pose.position.z;// base constraints in the z direction;
-    xu[24] = 0.5; xl[24] = 0.0;
+    xu[24] = 0.55; xl[24] = 0.3;
 
     //add base constraints in the x-y direction;
     xi[25] = req.robot_state.base_pose.pose.pose.position.x;
@@ -252,7 +252,9 @@ bool robot_state_callback(free_gait_msgs::optimize::Request&  req,
         x_veri[i] = solution.x[i];
     }
 
-
+    res.desired_robotstate.base_pose.pose.pose.position.x = solution.x[25];
+    res.desired_robotstate.base_pose.pose.pose.position.y = solution.x[26];
+    res.desired_robotstate.base_pose.pose.pose.position.z = solution.x[24];
 
     quadkin.PrepareLegLoading();
     quadkin.Angles_Torques_Initial(x_veri);
@@ -292,7 +294,7 @@ bool robot_state_callback(free_gait_msgs::optimize::Request&  req,
     std::cout << "foot force is : " << std::endl;
     final = jac_ * torques;//foot force;
     quadkin.EigenMatrixPrintf(final.transpose());
-    res.success = true;
+
     ROS_INFO_STREAM("Success~");
     return true;
 

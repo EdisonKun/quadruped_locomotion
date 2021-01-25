@@ -9,6 +9,7 @@
 #include "controller_manager_msgs/ListControllers.h"
 #include "free_gait_msgs/SetLimbConfigure.h"
 #include "std_srvs/SetBool.h"
+#include "std_srvs/Empty.h"
 #include "std_msgs/Bool.h"
 #include "sensor_msgs/JointState.h"
 #include "std_msgs/Float64MultiArray.h"
@@ -79,6 +80,8 @@ private slots:
 
   void on_anti_X_clicked();
 
+  void on_Optimization_service_clicked();
+
   private:
   Ui::rqt_control_panel_plugin_widget *ui;
   ros::NodeHandle nodehandle_;
@@ -91,6 +94,7 @@ private slots:
   ros::ServiceClient trotSwitchClient_;
   ros::ServiceClient paceSwitchClient_;
   ros::ServiceClient crawlSwitchClient_;
+  ros::ServiceClient OptimizationClient_;
 
   ros::Publisher eStopPublisher_;
   ros::Publisher jointPositionCommandPublisher_;

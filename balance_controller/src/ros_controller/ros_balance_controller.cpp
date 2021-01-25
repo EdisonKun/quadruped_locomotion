@@ -309,7 +309,10 @@ namespace balance_controller{
         joint_actual.velocity[i] = all_joint_velocities(i);
         joint_actual.effort[i] = all_joint_efforts(i);
         status_word.data[i] = robot_state_handle.motor_status_word_[i];
+        std::cout << "joint antual effort is " << joint_actual.effort[i] << std::endl;
       }
+
+
 
     boost::recursive_mutex::scoped_lock lock(r_mutex_);
     //! WSHY: read joint position command
@@ -645,6 +648,7 @@ namespace balance_controller{
 //        robot_state->setJointEffortsForLimb(static_cast<free_gait::LimbEnum>(i), joint_torque_limb);
 //      }
 
+
     for(int i = 0; i<4; i++)
       {
         /****************
@@ -654,6 +658,7 @@ namespace balance_controller{
 //        double joint_torque_command = robot_state->getAllJointEfforts()(i);
 
         free_gait::JointEffortsLeg joint_torque_limb = robot_state->getJointEffortsForLimb(static_cast<free_gait::LimbEnum>(i));
+        std::cout << "joint torque limb is " << joint_torque_limb << std::endl;
 //        for(int k=0;k<3;k++)
 //          joint_command.effort[i*3 + k] = joint_torque_limb(k);
 //        jointTorquesLimit(joint_torque_limb, 60.0);

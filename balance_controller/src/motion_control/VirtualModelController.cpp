@@ -132,12 +132,11 @@ bool VirtualModelController::compute()
   computeVirtualForce();
   computeVirtualTorque();
 //  cout << *this << endl;
-  /**Edison Kun make change here, where it is unnecessary to calculate the foot force;
+  /**Edison Kun make change here, where it is unnecessary to calculate the foot force;*/
   if (!contactForceDistribution_->computeForceDistribution(virtualForceInBaseFrame_, virtualTorqueInBaseFrame_)) {
 
     return false;
   }
-*//////
   return true;
 }
 

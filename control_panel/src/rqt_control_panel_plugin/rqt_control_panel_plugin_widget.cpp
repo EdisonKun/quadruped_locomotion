@@ -31,6 +31,8 @@ rqt_control_panel_plugin_widget::rqt_control_panel_plugin_widget(const ros::Node
 
   crawlSwitchClient_ = nodehandle_.serviceClient<std_srvs::SetBool>("crawl_switch",false);
 
+  OptimizationClient_ = nodehandle_.serviceClient<std_srvs::Empty>("/optimize_solve");
+
   eStopPublisher_ = nodehandle_.advertise<std_msgs::Bool>("/e_stop", 1);
 
   baseVelocityCommandPublisher_ = nodehandle_.advertise<geometry_msgs::Twist>("/cmd_vel", 1);
@@ -657,4 +659,10 @@ void rqt_control_panel_plugin_widget::on_anti_X_clicked()
     change_anti_x_msgs.data = true;
     change_to_anti_X_pub_.publish(change_anti_x_msgs);
 
+}
+
+void rqt_control_panel_plugin_widget::on_Optimization_service_clicked()
+{
+    std_srvs::Empty srv;
+    OptimizationClient_.call(srv);
 }

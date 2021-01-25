@@ -4,3 +4,4 @@ geometry_msgs/WrenchStamped desired_force
 ---
 #response fields
 bool success
+free_gait_msgs/RobotState desired_robotstate
