@@ -14,8 +14,12 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="2" column="0" colspan="3">
-    <widget class="QTextBrowser" name="InfoOutputs"/>
+   <item row="0" column="2">
+    <widget class="QPushButton" name="setMode">
+     <property name="text">
+      <string>Set</string>
+     </property>
+    </widget>
    </item>
    <item row="0" column="0">
     <widget class="QLabel" name="label">
@@ -45,12 +49,8 @@
      </item>
     </widget>
    </item>
-   <item row="0" column="2">
-    <widget class="QPushButton" name="setMode">
-     <property name="text">
-      <string>Set</string>
-     </property>
-    </widget>
+   <item row="2" column="0" colspan="3">
+    <widget class="QTextBrowser" name="InfoOutputs"/>
    </item>
    <item row="1" column="0" colspan="3">
     <widget class="QTabWidget" name="Controllers">
@@ -64,7 +64,7 @@
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Joint&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="currentIndex">
-      <number>3</number>
+      <number>7</number>
      </property>
      <widget class="QWidget" name="BlanceController">
       <property name="enabled">
@@ -1123,8 +1123,8 @@
       <widget class="QPushButton" name="Optimization_service">
        <property name="geometry">
         <rect>
-         <x>220</x>
-         <y>80</y>
+         <x>300</x>
+         <y>60</y>
          <width>89</width>
          <height>25</height>
         </rect>
@@ -1132,6 +1132,76 @@
        <property name="text">
         <string>Optimization</string>
        </property>
+      </widget>
+      <widget class="QPushButton" name="capture_data">
+       <property name="geometry">
+        <rect>
+         <x>300</x>
+         <y>100</y>
+         <width>91</width>
+         <height>25</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>capture_data</string>
+       </property>
+      </widget>
+      <widget class="QWidget" name="gridLayoutWidget">
+       <property name="geometry">
+        <rect>
+         <x>60</x>
+         <y>20</y>
+         <width>211</width>
+         <height>151</height>
+        </rect>
+       </property>
+       <layout class="QGridLayout" name="gridLayout_5" rowstretch="0,0,0,0" columnstretch="0,0">
+        <property name="leftMargin">
+         <number>9</number>
+        </property>
+        <property name="topMargin">
+         <number>9</number>
+        </property>
+        <property name="rightMargin">
+         <number>9</number>
+        </property>
+        <property name="bottomMargin">
+         <number>9</number>
+        </property>
+        <property name="spacing">
+         <number>9</number>
+        </property>
+        <item row="0" column="1">
+         <widget class="QDoubleSpinBox" name="X_force"/>
+        </item>
+        <item row="2" column="1">
+         <widget class="QDoubleSpinBox" name="Y_force"/>
+        </item>
+        <item row="3" column="1">
+         <widget class="QDoubleSpinBox" name="Z_force"/>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_32">
+          <property name="text">
+           <string>Z-force</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="label_33">
+          <property name="text">
+           <string>Y-force</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_34">
+          <property name="text">
+           <string>X-force</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </widget>
      </widget>
     </widget>

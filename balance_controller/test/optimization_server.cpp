@@ -184,6 +184,7 @@ bool robot_state_callback(free_gait_msgs::optimize::Request&  req,
     gl[20] = CppAD::Value(quadkin.GetFootPositionInWorldframe(free_gait::LimbEnum::LH_LEG).y());gu[20] = gl[20];
     gl[21] = CppAD::Value(quadkin.GetFootPositionInWorldframe(free_gait::LimbEnum::LH_LEG).z());gu[21] = gl[21];
 
+    //friction force
     for (int i = 22; i < 26; i++) {
         gl[i] = 0; gu[i] = 1.0e5;
     }
@@ -192,13 +193,22 @@ bool robot_state_callback(free_gait_msgs::optimize::Request&  req,
     xu[24] = 0.55; xl[24] = 0.3;
 
     //add base constraints in the x-y direction;
-    xi[25] = req.robot_state.base_pose.pose.pose.position.x;
-    xu[25] = CppAD::Value(quadkin.GetFootPositionInWorldframe(free_gait::LimbEnum::LF_LEG).x());
-    xl[25] = CppAD::Value(quadkin.GetFootPositionInWorldframe(free_gait::LimbEnum::LH_LEG).x());
+//    xi[25] = req.robot_state.base_pose.pose.pose.position.x;
+//    xu[25] = CppAD::Value(quadkin.GetFootPositionInWorldframe(free_gait::LimbEnum::LF_LEG).x());
+//    xl[25] = CppAD::Value(quadkin.GetFootPositionInWorldframe(free_gait::LimbEnum::LH_LEG).x());
 
-    xi[26] = req.robot_state.base_pose.pose.pose.position.y;
-    xu[26] = CppAD::Value(quadkin.GetFootPositionInWorldframe(free_gait::LimbEnum::LF_LEG).y());
-    xl[26] = CppAD::Value(quadkin.GetFootPositionInWorldframe(free_gait::LimbEnum::RF_LEG).y());
+//    xi[26] = req.robot_state.base_pose.pose.pose.position.y;
+//    xu[26] = CppAD::Value(quadkin.GetFootPositionInWorldframe(free_gait::LimbEnum::LF_LEG).y());
+//    xl[26] = CppAD::Value(quadkin.GetFootPositionInWorldframe(free_gait::LimbEnum::RF_LEG).y());
+
+    //the constraints in the base frame, should convert it to the world frame in the res function;
+    xi[25] = 0.0;
+    xu[25] = 0.5 * CppAD::Value(quadkin.Get_foot_position_In_Baseframe(free_gait::LimbEnum::LF_LEG).x());
+    xl[25] = 0.5 * CppAD::Value(quadkin.Get_foot_position_In_Baseframe(free_gait::LimbEnum::LH_LEG).x());
+
+    xi[26] = 0.0;
+    xu[26] = 0.5 * CppAD::Value(quadkin.Get_foot_position_In_Baseframe(free_gait::LimbEnum::LF_LEG).y());
+    xl[26] = 0.5 * CppAD::Value(quadkin.Get_foot_position_In_Baseframe(free_gait::LimbEnum::RF_LEG).y());
 
 
     FG_eval fg_eval;

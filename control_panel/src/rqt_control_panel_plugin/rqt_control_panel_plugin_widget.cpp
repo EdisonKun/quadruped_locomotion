@@ -33,6 +33,8 @@ rqt_control_panel_plugin_widget::rqt_control_panel_plugin_widget(const ros::Node
 
   OptimizationClient_ = nodehandle_.serviceClient<std_srvs::Empty>("/optimize_solve");
 
+  capture_log_data_client_ = nodehandle_.serviceClient<std_srvs::Empty>("/capture_log_data_jt");
+
   eStopPublisher_ = nodehandle_.advertise<std_msgs::Bool>("/e_stop", 1);
 
   baseVelocityCommandPublisher_ = nodehandle_.advertise<geometry_msgs::Twist>("/cmd_vel", 1);
@@ -665,4 +667,16 @@ void rqt_control_panel_plugin_widget::on_Optimization_service_clicked()
 {
     std_srvs::Empty srv;
     OptimizationClient_.call(srv);
+}
+
+void rqt_control_panel_plugin_widget::on_capture_data_clicked()
+{
+    std_srvs::Empty srv;
+    capture_log_data_client_.call(srv);
+
+}
+
+void rqt_control_panel_plugin_widget::on_X_force_valueChanged(double arg1)
+{
+
 }

@@ -158,6 +158,14 @@ void RobotStateGazeboRosControlPlugin::Load(gazebo::physics::ModelPtr parent, sd
       << control_period_);
   }
 
+  baselink_ = parent_model_->GetLink("base_link");
+  if(parent_model_->GetLink("base_link"))
+  {
+      std::cout << " success get the base link*****" << std::endl;
+  }else {
+      std::cout << "no base link~~~~~~~~~~~~" << std::endl;
+}
+
   // Get parameters/settings for controllers from ROS param server
   model_nh_ = ros::NodeHandle(robot_namespace_);
 
@@ -245,6 +253,12 @@ void RobotStateGazeboRosControlPlugin::Update()
 
   robot_hw_->eStopActive(e_stop_active_);
 
+  gazebo::math::Vector3 base_force;
+  base_force.Set(0,0,500);
+  this->parent_model_->GetLink("base_link")->SetForce(base_force);
+
+  std::cout << " the base link force is " << baselink_->GetWorldForce() << std::endl;
+
   // Check if we should update the controllers
   if(sim_period >= control_period_) {
       sim_period = ros::Duration(sim_period.toSec()/real_time_factor);
@@ -253,6 +267,7 @@ void RobotStateGazeboRosControlPlugin::Update()
 
     // Update the robot simulation with the state of the gazebo model
     robot_hw_->readSim(sim_time_ros, sim_period);
+
 
     // Compute the controller commands
     bool reset_ctrlrs;

@@ -82,6 +82,10 @@ private slots:
 
   void on_Optimization_service_clicked();
 
+  void on_capture_data_clicked();
+
+  void on_X_force_valueChanged(double arg1);
+
   private:
   Ui::rqt_control_panel_plugin_widget *ui;
   ros::NodeHandle nodehandle_;
@@ -95,6 +99,7 @@ private slots:
   ros::ServiceClient paceSwitchClient_;
   ros::ServiceClient crawlSwitchClient_;
   ros::ServiceClient OptimizationClient_;
+  ros::ServiceClient capture_log_data_client_;
 
   ros::Publisher eStopPublisher_;
   ros::Publisher jointPositionCommandPublisher_;

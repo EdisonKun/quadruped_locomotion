@@ -134,6 +134,7 @@ protected:
   double real_time_factor;
 
   ros::ServiceServer control_method_server_;
+  gazebo::physics::LinkPtr baselink_;
 
 };
 

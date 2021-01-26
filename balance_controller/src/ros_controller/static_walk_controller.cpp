@@ -252,8 +252,6 @@ void static_walk_controller::update(const ros::Time &time, const ros::Duration &
         }
     }
 
-
-    log_data_ = true;
     if(log_data_)
     {
         ROS_INFO_STREAM_ONCE("LOG DATA ING");
@@ -798,12 +796,25 @@ bool static_walk_controller::optimization_solve(std_srvs::Empty::Request& req,
     ROS_INFO_STREAM("SUCCESS, Ignore the error message~");
     ROS_INFO_STREAM("Now, send the action");
 
+    //convert it to the world frame;
+    Eigen::Vector4d position_in_base, position_in_world;
+    position_in_base.x() = srv.response.desired_robotstate.base_pose.pose.pose.position.x;
+    position_in_base.y() = srv.response.desired_robotstate.base_pose.pose.pose.position.y;
+    position_in_base.z() = 0;
+    position_in_base.w() = 1;
+    std::cout << "the response position is" << position_in_base.transpose() << std::endl;
+    std::cout << " the current trandformation matrix is " <<std::endl << current_base_pose.getTransformationMatrix() << std::endl;
+    position_in_world = current_base_pose.getTransformationMatrix() * position_in_base;
+    std::cout << " the position in world is " << position_in_world.transpose() << std::endl;
+
     free_gait_msgs::Step initial_steps;
     free_gait_msgs::BaseTarget base_target_msg;
     base_target_msg.target.header.frame_id = "odom";
     base_target_msg.target.pose.position.z = srv.response.desired_robotstate.base_pose.pose.pose.position.z;
-    base_target_msg.target.pose.position.x = srv.response.desired_robotstate.base_pose.pose.pose.position.x;
-    base_target_msg.target.pose.position.y = srv.response.desired_robotstate.base_pose.pose.pose.position.y;
+    base_target_msg.target.pose.position.x = position_in_world.x();
+    base_target_msg.target.pose.position.y = position_in_world.y();
+    std::cout << " the base target is " << base_target_msg.target.pose.position << std::endl;
+
 
     base_target_msg.ignore_timing_of_leg_motion = false;
 
@@ -859,6 +870,7 @@ bool static_walk_controller::logDataCapture(std_srvs::Empty::Request& req,std_sr
 {
     ROS_INFO("Call to Capture Log Data");
     ROS_INFO_STREAM("Call to Capture Log Data" << desired_robot_state_.size());
+    log_data_ = false;
     for(int index = 0; index<desired_robot_state_.size(); index++)
     {
         base_command_pub_.publish(base_command_pose_[index]);
