@@ -28,6 +28,7 @@ static_walk_controller::static_walk_controller()
         is_footstep_[limb] = false;
         is_legmode_[limb] = false;
     }
+    optimize_number = 0;
 }//static_walk_controller
 
 static_walk_controller::~static_walk_controller()
@@ -112,8 +113,6 @@ bool static_walk_controller::init(hardware_interface::RobotStateInterface *hardw
         robot_state_handle_.foot_contact_[i] = 1;
     }
 
-
-
     commands_buffer.writeFromNonRT(std::vector<double>(n_joints_, 0.0));
 
     optimize_srv_ = nodehandle.advertiseService("/optimize_solve", &static_walk_controller::optimization_solve, this);
@@ -137,7 +136,12 @@ bool static_walk_controller::init(hardware_interface::RobotStateInterface *hardw
     base_command_pub_ = nodehandle.advertise<nav_msgs::Odometry>("/log/base_command_jt", log_length_);
     base_actual_pub_ = nodehandle.advertise<nav_msgs::Odometry>("/log/base_actual_jt", log_length_);
     torques_square_pub_ = nodehandle.advertise<std_msgs::Float64>("/log/torques_square_jt", log_length_);
+    external_force_sub_ = nodehandle.subscribe("/external_force",1000,&static_walk_controller::external_force_CB, this);
 
+    external_force_.resize(3);
+    external_force_[0] = 0;
+    external_force_[1] = 0;
+    external_force_[2] = 0;
     return true;
 }
 
@@ -273,6 +277,9 @@ void static_walk_controller::update(const ros::Time &time, const ros::Duration &
 //                                           desired_vmc_ft.wrench.force);
 //        kindr_ros::convertToRosGeometryMsg(Position(virtual_model_controller_->getDesiredVirtualTorqueInBaseFrame().vector()),
 //                                           desired_vmc_ft.wrench.torque);
+        net_force.x() = net_force.x() + external_force_.at(0);
+        net_force.y() = net_force.y() + external_force_.at(1);
+        net_force.z() = net_force.z() + external_force_.at(2);
         kindr_ros::convertToRosGeometryMsg(Position(net_force.vector()),
                                            vmc_force_torque.wrench.force);
         kindr_ros::convertToRosGeometryMsg(Position(net_torque.vector()),
@@ -785,6 +792,16 @@ bool static_walk_controller::optimization_solve(std_srvs::Empty::Request& req,
                                        desired_vmc_ft.wrench.torque);
 
     srv.request.desired_force = desired_vmc_ft;
+
+    if(optimize_number % 2 == 0)
+    {
+        srv.request.use_force_estimate.data = false;
+        optimize_number = optimize_number + 1;
+    }else {
+        srv.request.use_force_estimate.data = true;
+        optimize_number = optimize_number + 1;
+    }
+
     if (client_cli_.call(srv))
     {
         ROS_INFO_STREAM("the response is " << srv.response.success);
@@ -886,6 +903,15 @@ bool static_walk_controller::logDataCapture(std_srvs::Empty::Request& req,std_sr
     return true;
 
 }
+
+void static_walk_controller::external_force_CB(const geometry_msgs::Vector3& external_force)
+{
+    ROS_INFO_STREAM("Get the external force in the static walk controller");
+    external_force_[0] = external_force.x;
+    external_force_[1] = external_force.y;
+    external_force_[2] = external_force.z;
+}
+
 
 
 }//namespace

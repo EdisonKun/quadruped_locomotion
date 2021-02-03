@@ -101,11 +101,17 @@ private:
     boost::recursive_mutex r_mutex_;
     ros::ServiceServer optimize_srv_;
     ros::ServiceClient client_cli_;
+    int optimize_number;
 
     //action
     std::string actionServerTopic_;
     free_gait_msgs::ExecuteStepsGoal step_goal;
     std::unique_ptr<actionlib::SimpleActionClient<free_gait_msgs::ExecuteStepsAction>> stepActionClient_;
+
+    //external force
+    std::vector<double> external_force_;
+    ros::Subscriber external_force_sub_;
+    void external_force_CB(const geometry_msgs::Vector3& external_force);
 };
 
 }//namespace

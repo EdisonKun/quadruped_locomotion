@@ -53,6 +53,8 @@ rqt_control_panel_plugin_widget::rqt_control_panel_plugin_widget(const ros::Node
   change_to_right_pub_ = nodehandle_.advertise<std_msgs::Bool>("/right_configure_change",1);
 
   change_to_anti_X_pub_ = nodehandle_.advertise<std_msgs::Bool>("/anti_x_configure_change",1);
+
+  external_force_pub_ = nodehandle_.advertise<geometry_msgs::Vector3>("/external_force",1);
 }
 
 rqt_control_panel_plugin_widget::~rqt_control_panel_plugin_widget()
@@ -673,10 +675,16 @@ void rqt_control_panel_plugin_widget::on_capture_data_clicked()
 {
     std_srvs::Empty srv;
     capture_log_data_client_.call(srv);
+    displayOutputInfos("green", "capture dataing");
 
 }
 
-void rqt_control_panel_plugin_widget::on_X_force_valueChanged(double arg1)
+void rqt_control_panel_plugin_widget::on_SetForce_clicked()
 {
-
+    geometry_msgs::Vector3 force_msgs;
+    force_msgs.x = ui->X_force->value();
+    force_msgs.y = ui->Y_force->value();
+    force_msgs.z = ui->Z_force->value();
+    external_force_pub_.publish(force_msgs);
+    displayOutputInfos("green", "external force is added");
 }

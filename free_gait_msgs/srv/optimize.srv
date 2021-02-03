@@ -1,6 +1,7 @@
 #request fields
 free_gait_msgs/RobotState robot_state
 geometry_msgs/WrenchStamped desired_force
+std_msgs/Bool use_force_estimate
 ---
 #response fields
 bool success

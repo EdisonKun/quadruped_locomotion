@@ -337,6 +337,16 @@ target_link_libraries(optimization_server_node
   /usr/local/lib/libiitgenhyq.so
   )
 
+add_executable(baseforceEstimate_node test/BaseForceEstimate.cpp)
+target_link_libraries(baseforceEstimate_node
+  ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARY_DIRS}
+  ${ifopt_LIBRARIES}
+  /usr/local/lib/libiitgenquadruped_model.so
+  /usr/local/lib/libiitgenhyq.so
+  )
+
 
 
 add_executable(quadruped_nonlinear_exe_node test/quadruped_nonlinear_exe.cpp)

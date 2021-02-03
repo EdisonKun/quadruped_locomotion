@@ -84,7 +84,9 @@ private slots:
 
   void on_capture_data_clicked();
 
-  void on_X_force_valueChanged(double arg1);
+  void on_SetForce_clicked();
+
+  void on_force_estimation_clicked();
 
   private:
   Ui::rqt_control_panel_plugin_widget *ui;
@@ -110,6 +112,7 @@ private slots:
   ros::Publisher change_to_left_pub_;
   ros::Publisher change_to_right_pub_;
   ros::Publisher change_to_anti_X_pub_;
+  ros::Publisher external_force_pub_;
 
 
   ros::Subscriber jointStateSubscriber_;

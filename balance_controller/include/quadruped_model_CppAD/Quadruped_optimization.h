@@ -36,11 +36,15 @@ public:
 
         Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> torques;
         torques.resize(12,1);
+        double w;
+        w=0.5;
 
         for (unsigned int i = 0; i < 12; i++) {
             fg[0] = fg[0] + x[i+12] * x[i+12];
             torques(i,0) = x[i+12];
         }
+        double s;
+        s = 1;
 
         CppAD::AD<double> base_x, base_y, base_z;
         base_z = x[24];
@@ -58,6 +62,38 @@ public:
         //add leg force, the force in the z direction should be bigger than zero?nope, smaller than zero;
         std::vector<Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic>> foot_force;
         foot_force.resize(4);
+
+        int support_leg;
+        support_leg = 4;
+
+        Eigen::Matrix3d foot_force_aver;
+        foot_force_aver(0,0) = base_force(0,0);
+        foot_force_aver(1,0) = base_force(1,0);
+        foot_force_aver(2,0) = base_force(2,0);
+
+        foot_force_aver = foot_force_aver / 3.0;
+        std::cout << " fooooooot force average is " << foot_force_aver(0,0) << " " << foot_force_aver(1,0) << " " << foot_force_aver(2,0) << std::endl;
+
+        ADvector foot_force_advector;
+        foot_force_advector.resize(12);
+        for (unsigned int i = 0; i < 12; i++) {
+            foot_force_advector[i] = (jac_ * torques)(i,0);
+        }
+
+        fg[0] = fg[0] + s* ((foot_force_advector[0] - foot_force_aver(0,0)) * (foot_force_advector[0] - foot_force_aver(0,0))
+                             + (foot_force_advector[1] - foot_force_aver(1,0)) * (foot_force_advector[1] - foot_force_aver(1,0))
+                             + (foot_force_advector[2] - foot_force_aver(2,0)) * (foot_force_advector[2] - foot_force_aver(2,0))
+                             + (foot_force_advector[3] - foot_force_aver(0,0)) * (foot_force_advector[3] - foot_force_aver(0,0))
+                             + (foot_force_advector[4] - foot_force_aver(1,0)) * (foot_force_advector[4] - foot_force_aver(1,0))
+                             + (foot_force_advector[5] - foot_force_aver(2,0)) * (foot_force_advector[5] - foot_force_aver(2,0))
+                             + (foot_force_advector[6] - foot_force_aver(0,0)) * (foot_force_advector[6] - foot_force_aver(0,0))
+                             + (foot_force_advector[7] - foot_force_aver(1,0)) * (foot_force_advector[7] - foot_force_aver(1,0))
+                             + (foot_force_advector[8] - foot_force_aver(2,0)) * (foot_force_advector[8] - foot_force_aver(2,0))
+                             + (foot_force_advector[9] - foot_force_aver(0,0)) * (foot_force_advector[9] - foot_force_aver(0,0))
+                             + (foot_force_advector[10] - foot_force_aver(1,0)) * (foot_force_advector[10] - foot_force_aver(1,0))
+                             + (foot_force_advector[11] - foot_force_aver(2,0)) * (foot_force_advector[11] - foot_force_aver(2,0))
+                             );
+
         for (unsigned int i = 0; i < 4; i++) {
             foot_force.at(i).resize(3,1);
             foot_force.at(i) = Eigen::Matrix<CppAD::AD<double>, 12, 1>(jac_ * torques).segment(3 * i, 3 * i + 3);//all leg force;
@@ -108,6 +144,7 @@ public:
 
 public:
     std::shared_ptr<free_gait::State> Robot_state;
+    Eigen::MatrixXd base_force;
     void SetRobotState()
     {
         std::cout << " success set the robot state" << std::endl;
@@ -144,6 +181,12 @@ public:
         std::cout << " success set the robot state" << std::endl;
         Robot_state.reset(new free_gait::State);
         Robot_state = RobotState;
+    }
+
+    void SetBaseforce(Eigen::MatrixXd& base_force_external)
+    {
+        base_force.resize(6,1);
+        base_force = base_force_external;
     }
 };
 }

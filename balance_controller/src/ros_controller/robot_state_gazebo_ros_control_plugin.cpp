@@ -235,6 +235,11 @@ void RobotStateGazeboRosControlPlugin::Load(gazebo::physics::ModelPtr parent, sd
     ROS_FATAL_STREAM_NAMED("gazebo_ros_control","Failed to create robot simulation interface loader: "<<ex.what());
   }
 
+  external_force_sub_ = model_nh_.subscribe("/external_force", 1000, &RobotStateGazeboRosControlPlugin::External_force_CB, this);
+  external_force.resize(3);
+  external_force.at(0) = 0;
+  external_force.at(1) = 0;
+  external_force.at(2) = 0;
   ROS_INFO_NAMED("gazebo_ros_control", "Loaded gazebo_ros_control.");
 }
 
@@ -254,10 +259,11 @@ void RobotStateGazeboRosControlPlugin::Update()
   robot_hw_->eStopActive(e_stop_active_);
 
   gazebo::math::Vector3 base_force;
-  base_force.Set(0,0,500);
-  this->parent_model_->GetLink("base_link")->SetForce(base_force);
+  base_force.Set(external_force.at(0), external_force.at(1), external_force.at(2));
 
-  std::cout << " the base link force is " << baselink_->GetWorldForce() << std::endl;
+//  this->parent_model_->GetLink("base_link")->SetForce(base_force);
+  this->parent_model_->GetLink("base_link")->AddRelativeForce(base_force);
+//  std::cout << " the base link force is " << baselink_->GetWorldForce() << std::endl;
 
   // Check if we should update the controllers
   if(sim_period >= control_period_) {
@@ -356,6 +362,14 @@ bool RobotStateGazeboRosControlPlugin::setControlMethodCB(free_gait_msgs::SetLim
   control_method = req.configure;
   res.result = robot_hw_->setControlMethod(control_method);
   return true;
+}
+
+void RobotStateGazeboRosControlPlugin::External_force_CB(const geometry_msgs::Vector3 &external_force_msgs)
+{
+    ROS_INFO_STREAM("Get the external force in the gazbo");
+    external_force[0] = external_force_msgs.x;
+    external_force[1] = external_force_msgs.y;
+    external_force[2] = external_force_msgs.z;
 }
 
 

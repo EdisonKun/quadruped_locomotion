@@ -92,12 +92,15 @@ public:
      * @return
      */
     Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> GetFootJacobian();
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> GetFootDoubleJacobian();
 
     /**
      * @brief GetFootJacobian
      * @return Get the big matrix A;
      */
     Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> GetAMatrix();
+
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> GetADoubleMatrix();
 
     /**
      *printf the eigen matrix;

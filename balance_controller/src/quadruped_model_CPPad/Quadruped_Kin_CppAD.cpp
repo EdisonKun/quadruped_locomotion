@@ -32,7 +32,7 @@ Quad_Kin_CppAD::~Quad_Kin_CppAD()
 
 void Quad_Kin_CppAD::Angles_Torques_Initial(const ADvector& x)
 {
-//    std::cout << "initial angles and torques" << std::endl;
+    std::cout << "initial angles and torques" << std::endl;
     JointPositions all_joint_positions;
     for (unsigned int i = 0; i < 12; i++) {
         angles_(i,0) = x[i];
@@ -175,11 +175,34 @@ Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> Quad_Kin_CppAD:
 //    std::cout << "get the jacobian_" << std::endl;
     return Jacobians_;
 }
+Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> Quad_Kin_CppAD::GetFootDoubleJacobian()
+{
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> A_double;
+    A_double.resize(Jacobians_.rows(),Jacobians_.cols());
+    for (unsigned int i = 0; i < Jacobians_.rows(); i++) {
+        for (unsigned int j = 0; j < Jacobians_.cols(); j++) {
+            A_double(i,j) = CppAD::Value(Jacobians_(i,j));
+        }
+    }
+    return A_double;
+}
 
 Eigen::Matrix<CppAD::AD<double>, Eigen::Dynamic, Eigen::Dynamic> Quad_Kin_CppAD::GetAMatrix()
 {
 //    std::cout << "get the matrix A" << std::endl;
     return A_;
+}
+
+Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> Quad_Kin_CppAD::GetADoubleMatrix()
+{
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> A_double;
+    A_double.resize(A_.rows(),A_.cols());
+    for (unsigned int i = 0; i < A_.rows(); i++) {
+        for (unsigned int j = 0; j < A_.cols(); j++) {
+            A_double(i,j) = CppAD::Value(A_(i,j));
+        }
+    }
+    return A_double;
 }
 
 void Quad_Kin_CppAD::SetBaseInWorld(const Pose_cppad &base_pose)

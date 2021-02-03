@@ -83,6 +83,7 @@ public:
 
   // Get Transmissions from the URDF
   bool parseTransmissionsFromURDF(const std::string& urdf_string);
+  void External_force_CB(const geometry_msgs::Vector3& external_force);
 
 protected:
   void eStopCB(const std_msgs::BoolConstPtr& e_stop_active);
@@ -135,6 +136,9 @@ protected:
 
   ros::ServiceServer control_method_server_;
   gazebo::physics::LinkPtr baselink_;
+
+  ros::Subscriber external_force_sub_;
+  std::vector<double> external_force;
 
 };
 

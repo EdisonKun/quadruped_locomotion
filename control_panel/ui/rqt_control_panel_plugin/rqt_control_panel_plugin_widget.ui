@@ -21,20 +21,6 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="0">
-    <widget class="QLabel" name="label">
-     <property name="font">
-      <font>
-       <pointsize>13</pointsize>
-       <weight>75</weight>
-       <bold>true</bold>
-      </font>
-     </property>
-     <property name="text">
-      <string>Control Panel</string>
-     </property>
-    </widget>
-   </item>
    <item row="0" column="1">
     <widget class="QComboBox" name="runMode">
      <item>
@@ -47,6 +33,20 @@
        <string>Real</string>
       </property>
      </item>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label">
+     <property name="font">
+      <font>
+       <pointsize>13</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Control Panel</string>
+     </property>
     </widget>
    </item>
    <item row="2" column="0" colspan="3">
@@ -64,7 +64,7 @@
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Joint&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="currentIndex">
-      <number>7</number>
+      <number>3</number>
      </property>
      <widget class="QWidget" name="BlanceController">
       <property name="enabled">
@@ -1120,32 +1120,6 @@
       <attribute name="title">
        <string>Page</string>
       </attribute>
-      <widget class="QPushButton" name="Optimization_service">
-       <property name="geometry">
-        <rect>
-         <x>300</x>
-         <y>60</y>
-         <width>89</width>
-         <height>25</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Optimization</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="capture_data">
-       <property name="geometry">
-        <rect>
-         <x>300</x>
-         <y>100</y>
-         <width>91</width>
-         <height>25</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>capture_data</string>
-       </property>
-      </widget>
       <widget class="QWidget" name="gridLayoutWidget">
        <property name="geometry">
         <rect>
@@ -1155,7 +1129,7 @@
          <height>151</height>
         </rect>
        </property>
-       <layout class="QGridLayout" name="gridLayout_5" rowstretch="0,0,0,0" columnstretch="0,0">
+       <layout class="QGridLayout" name="gridLayout_5" rowstretch="0,0,0,0,0" columnstretch="0,0">
         <property name="leftMargin">
          <number>9</number>
         </property>
@@ -1171,19 +1145,47 @@
         <property name="spacing">
          <number>9</number>
         </property>
-        <item row="0" column="1">
-         <widget class="QDoubleSpinBox" name="X_force"/>
-        </item>
         <item row="2" column="1">
-         <widget class="QDoubleSpinBox" name="Y_force"/>
+         <widget class="QDoubleSpinBox" name="Y_force">
+          <property name="minimum">
+           <double>-10000.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>10000.000000000000000</double>
+          </property>
+         </widget>
         </item>
-        <item row="3" column="1">
-         <widget class="QDoubleSpinBox" name="Z_force"/>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_34">
+          <property name="text">
+           <string>X-force</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QDoubleSpinBox" name="X_force">
+          <property name="minimum">
+           <double>-10000.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>10000.000000000000000</double>
+          </property>
+         </widget>
         </item>
         <item row="3" column="0">
          <widget class="QLabel" name="label_32">
           <property name="text">
            <string>Z-force</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QDoubleSpinBox" name="Z_force">
+          <property name="minimum">
+           <double>-10000.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>10000.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -1194,10 +1196,36 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_34">
+        <item row="4" column="0">
+         <widget class="QPushButton" name="SetForce">
           <property name="text">
-           <string>X-force</string>
+           <string>SetForce</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="">
+       <property name="geometry">
+        <rect>
+         <x>300</x>
+         <y>30</y>
+         <width>126</width>
+         <height>89</height>
+        </rect>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <widget class="QPushButton" name="Optimization_service">
+          <property name="text">
+           <string>Optimization</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="capture_data">
+          <property name="text">
+           <string>capture_data</string>
           </property>
          </widget>
         </item>
